@@ -76,3 +76,22 @@ export function findConflicts(cells: Cell[]): Conflict[] {
   }
   return out;
 }
+
+/** Number of muted colour tones used to colour-code classes (see .tone-0 … .tone-7 in globals.css). */
+export const CLASS_TONE_COUNT = 8;
+
+/**
+ * Same class name → same tone, everywhere (grid, schedule, legend).
+ * Names are normalised so "Class 6A", "class 6a " and "Class  6A" share a colour.
+ * Returns null for an empty name.
+ */
+export function classTone(name: string | null | undefined): number | null {
+  const n = (name ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+  if (!n) return null;
+  let h = 2166136261;
+  for (let i = 0; i < n.length; i++) {
+    h ^= n.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h % CLASS_TONE_COUNT;
+}

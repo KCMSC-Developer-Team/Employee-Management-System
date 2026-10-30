@@ -6,11 +6,19 @@ export const metadata: Metadata = {
   description: 'Employee management system of K C Model School & College.',
 };
 
-export const viewport: Viewport = { themeColor: '#124C36', width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { themeColor: '#0a5a38', width: 'device-width', initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

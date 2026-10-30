@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Avatar, EmptyState, PageHead } from '@/components/ui';
 import { requireUser } from '@/lib/auth';
 import { query } from '@/lib/db';
-import { DAY_NAMES, DAY_ORDER, fmtRange, SECTION_LABELS } from '@/lib/routine';
+import { classTone, DAY_NAMES, DAY_ORDER, fmtRange, SECTION_LABELS } from '@/lib/routine';
 import type { Period, Section } from '@/lib/types';
 import { dhakaNow } from '@/lib/utils';
 
@@ -96,7 +96,7 @@ export default async function MyRoutine({ searchParams }: { searchParams: Promis
                       const className = dayEntries.get(`${section}:${period.id}`);
                       const isBreak = period.kind === 'tiffin';
                       return (
-                        <li className={`schedule-row${isBreak ? ' is-break' : ''}${className ? ' has-class' : ''}`} key={period.id}>
+                        <li className={`schedule-row${isBreak ? ' is-break' : ''}${className ? ' has-class' : ''}${classTone(className) !== null ? ` tone-${classTone(className)}` : ''}`} key={period.id}>
                           <div className="schedule-time">{fmtRange(period)}</div>
                           <div className="schedule-marker" aria-hidden="true" />
                           <div className="schedule-detail">

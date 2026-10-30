@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { saveDay } from '@/actions/routine';
-import { cellKey, findConflicts, fmtRange, type Cell } from '@/lib/routine';
+import { cellKey, classTone, findConflicts, fmtRange, type Cell } from '@/lib/routine';
 import type { Period, Section } from '@/lib/types';
 
 type Mentor = { id: string; name: string; designation: string };
@@ -53,6 +53,18 @@ export function RoutineGrid({
   }, [cells, periodMap, mentorMap]);
 
   const bad = useMemo(() => new Set(conflicts.flatMap((c) => c.keys)), [conflicts]);
+
+  // One legend entry per distinct class in use (shown in its colour).
+  const legend = useMemo(() => {
+    const seen = new Map<string, { name: string; tone: number }>();
+    for (const cls of Object.values(cells)) {
+      const tone = classTone(cls);
+      if (tone === null) continue;
+      const norm = cls.trim().replace(/\s+/g, ' ').toLowerCase();
+      if (!seen.has(norm)) seen.set(norm, { name: cls.trim().replace(/\s+/g, ' '), tone });
+    }
+    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [cells]);
 
   function save() {
     if (conflicts.length > 0 && !window.confirm(`There are ${conflicts.length} warning(s). Save the routine anyway?`)) return;
@@ -112,10 +124,12 @@ export function RoutineGrid({
                 </th>
                 {periods.map((p) => {
                   const key = cellKey(section, m.id, p.id);
+                  const isBad = bad.has(key);
+                  const tone = isBad ? null : classTone(cells[key]);
                   return (
                     <td key={p.id} className={p.kind === 'tiffin' ? 'tiffin' : ''}>
                       <input
-                        className={`cell-input ${bad.has(key) ? 'cell-bad' : ''}`}
+                        className={`cell-input ${isBad ? 'cell-bad' : ''} ${tone !== null ? `tone-${tone}` : ''}`}
                         list="class-suggestions"
                         value={cells[key] ?? ''}
                         maxLength={40}
@@ -133,6 +147,15 @@ export function RoutineGrid({
           </tbody>
         </table>
       </div>
+
+      {legend.length > 0 && (
+        <div className="class-legend" aria-label="Class colour key">
+          <span className="class-legend-label">Classes</span>
+          {legend.map((item) => (
+            <span key={item.tone} className={`chip class-chip tone-${item.tone}`}>{item.name}</span>
+          ))}
+        </div>
+      )}
 
       <div className="routine-savebar">
         <button className="btn" type="button" disabled={pending} onClick={save}>
