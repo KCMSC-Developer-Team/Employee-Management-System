@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { markAllRead } from '@/actions/misc';
-import { PageHead } from '@/components/ui';
+import { EmptyState, PageHead } from '@/components/ui';
 import { requireUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { fmtDateTime } from '@/lib/utils';
@@ -29,7 +29,7 @@ export default async function NotificationsPage() {
 
       {rows.length === 0 ? (
         <div className="card">
-          <p className="muted">Nothing here yet. New notifications will appear in this list.</p>
+          <EmptyState title="You’re all caught up" description="New notifications will appear here when there’s something to review." />
         </div>
       ) : (
         <div className="card list">

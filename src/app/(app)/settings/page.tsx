@@ -13,9 +13,9 @@ export default async function SettingsPage() {
     <>
       <PageHead title="Settings" sub={user.email || 'No e-mail address'} />
 
-      <div className="grid-2">
-        <section className="card">
-          <h2>Notifications</h2>
+      <div className="grid-2 settings-layout">
+        <section className="card settings-section">
+          <header className="settings-section-header"><div><p className="eyebrow">Preferences</p><h2>Notifications</h2></div></header>
           <p className="muted">Every notification is sent by browser and by e-mail. You may switch one off, but not both.</p>
           <ActionForm action={savePrefs} className="stack">
             <label className="check">
@@ -34,8 +34,8 @@ export default async function SettingsPage() {
           <PushToggle />
         </section>
 
-        <section className="card">
-          <h2>Password</h2>
+        <section className="card settings-section">
+          <header className="settings-section-header"><div><p className="eyebrow">Security</p><h2>Password</h2></div></header>
           <ActionForm action={changePassword} className="stack" resetOnSuccess>
             <div className="field">
               <label htmlFor="current">Current password</label>

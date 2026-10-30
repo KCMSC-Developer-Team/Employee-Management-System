@@ -89,7 +89,8 @@ export function RoutineGrid({
         <div className="alert alert-ok">No clashes found.</div>
       )}
 
-      <div className="table-wrap" style={{ marginTop: 12 }}>
+      <p className="routine-grid-help muted small">Enter the assigned class in each mentor’s period. The grid checks conflicts across both wings.</p>
+      <div className="table-wrap routine-grid-wrap" style={{ marginTop: 12 }}>
         <table className="table routine-table">
           <thead>
             <tr>
@@ -133,11 +134,11 @@ export function RoutineGrid({
         </table>
       </div>
 
-      <div className="row gap" style={{ marginTop: 16 }}>
+      <div className="routine-savebar">
         <button className="btn" type="button" disabled={pending} onClick={save}>
           {pending ? 'Saving…' : conflicts.length ? `Save with ${conflicts.length} warning(s)` : 'Save routine'}
         </button>
-        {msg && <span className={`alert ${msg.ok ? 'alert-ok' : 'alert-err'}`} style={{ margin: 0 }}>{msg.text}</span>}
+        {msg && <span className={`alert ${msg.ok ? 'alert-ok' : 'alert-err'}`} role="status" style={{ margin: 0 }}>{msg.text}</span>}
       </div>
     </div>
   );

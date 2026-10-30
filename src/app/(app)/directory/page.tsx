@@ -1,4 +1,4 @@
-import { Avatar, PageHead } from '@/components/ui';
+import { Avatar, EmptyState, PageHead } from '@/components/ui';
 import { requireUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 
@@ -32,16 +32,18 @@ export default async function Directory({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHead title="Mentor directory" sub="Contact any mentor." />
-      <form className="searchbar" action="/directory">
-        <input className="input" name="q" defaultValue={q} placeholder="Search by name or designation" aria-label="Search" />
+      <form className="searchbar directory-search" action="/directory">
+        <label className="sr-only" htmlFor="directory-search">Search mentors</label>
+        <input id="directory-search" className="input" name="q" defaultValue={q} placeholder="Search by name or designation" aria-label="Search mentors" />
         <button className="btn" type="submit">
           Search
         </button>
+        {q && <a className="btn btn-ghost" href="/directory">Clear</a>}
       </form>
 
       {rows.length === 0 ? (
         <div className="card">
-          <p className="muted">No mentors found.</p>
+          <EmptyState title="No mentors found" description={q ? 'Try another name or designation.' : 'Mentor accounts will appear here when they are active.'} />
         </div>
       ) : (
         <div className="grid-3">

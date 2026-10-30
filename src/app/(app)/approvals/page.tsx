@@ -1,6 +1,6 @@
 import { reviewEdit } from '@/actions/profile';
 import { ActionForm, SubmitButton } from '@/components/ActionForm';
-import { Avatar, fieldLabel, PageHead } from '@/components/ui';
+import { Avatar, EmptyState, fieldLabel, PageHead } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { FIELD_BY_KEY } from '@/lib/profile-fields';
@@ -35,13 +35,13 @@ export default async function ApprovalsPage() {
       <PageHead title="Approvals" sub={edits.length ? `${edits.length} waiting` : 'Nothing is waiting.'} />
       {edits.length === 0 ? (
         <div className="card">
-          <p className="muted">When an employee changes their profile, it appears here for you to approve or reject.</p>
+          <EmptyState title="Your review queue is clear" description="Employee profile changes will appear here when they need review." />
         </div>
       ) : (
-        <div className="stack">
+        <div className="approval-queue">
           {edits.map((e) => (
-            <section className="card" key={e.id}>
-              <div className="row gap">
+            <section className="card approval-item" key={e.id}>
+              <header className="approval-item-header">
                 <Avatar id={e.user_id} name={e.name} has={e.has_photo} v={e.photo_version} size={44} />
                 <div>
                   <strong>{e.name}</strong>
@@ -49,9 +49,10 @@ export default async function ApprovalsPage() {
                     {e.designation} · sent {fmtDateTime(e.created_at)}
                   </div>
                 </div>
-              </div>
-              <div className="table-wrap" style={{ margin: '14px 0' }}>
-                <table className="table">
+                <span className="chip chip-gold approval-pending">Pending review</span>
+              </header>
+              <div className="table-wrap approval-diff-wrap">
+                <table className="table approval-diff-table">
                   <thead>
                     <tr>
                       <th>Field</th>
@@ -72,13 +73,13 @@ export default async function ApprovalsPage() {
                   </tbody>
                 </table>
               </div>
-              <ActionForm action={reviewEdit} className="stack">
+              <ActionForm action={reviewEdit} className="approval-actions">
                 <input type="hidden" name="id" value={e.id} />
                 <div className="field">
                   <label htmlFor={`note-${e.id}`}>Reason (only needed if you reject)</label>
                   <input id={`note-${e.id}`} name="note" className="input" maxLength={300} />
                 </div>
-                <div className="row gap">
+                <div className="row gap approval-buttons">
                   <SubmitButton name="decision" value="approve" pendingText="Please wait…">
                     Approve
                   </SubmitButton>

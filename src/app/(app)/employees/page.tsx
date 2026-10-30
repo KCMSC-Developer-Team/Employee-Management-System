@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Avatar, PageHead } from '@/components/ui';
+import { Avatar, EmptyState, PageHead } from '@/components/ui';
 import { ActionForm, SubmitButton } from '@/components/ActionForm';
 import { SelectAllEmployees } from '@/components/SelectAllEmployees';
 import { bulkDeleteEmployees } from '@/actions/users';
@@ -53,12 +53,23 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
       <tbody>
         {rows.length === 0 && (
           <tr>
-            <td colSpan={(developer ? 1 : 0) + 6 + (manager ? 1 : 0)} className="muted">No one found.</td>
+            <td colSpan={(developer ? 1 : 0) + 6 + (manager ? 1 : 0)}><EmptyState title="No employees found" description={q ? 'Try a different name, ID, designation or e-mail.' : 'Employees will appear here when accounts are created.'} /></td>
           </tr>
         )}
         {rows.map((u) => (
           <tr key={u.id} className={u.active ? '' : 'dim'}>
-            {developer && <td><input type="checkbox" name="employeeIds" value={u.id} aria-label={`Select ${u.name}`} /></td>}
+            {developer && (
+              <td>
+                <input
+                  type="checkbox"
+                  name="employeeIds"
+                  value={u.id}
+                  aria-label={`Select ${u.name}`}
+                  disabled={u.id === actor.id}
+                  title={u.id === actor.id ? 'You cannot delete your own account.' : undefined}
+                />
+              </td>
+            )}
             <td>
               <Link href={`/employees/${u.id}`} className="row gap plain-link">
                 <Avatar id={u.id} name={u.name} has={u.has_photo} v={u.photo_version} size={34} />
@@ -105,11 +116,13 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
         )}
       </PageHead>
 
-      <form className="searchbar" action="/employees">
-        <input className="input" name="q" defaultValue={q} placeholder="Search by name, designation, e-mail or ID" aria-label="Search" />
+      <form className="searchbar employee-search" action="/employees">
+        <label className="sr-only" htmlFor="employee-search">Search employees</label>
+        <input id="employee-search" className="input" name="q" defaultValue={q} placeholder="Search by name, designation, e-mail or ID" aria-label="Search employees" />
         <button className="btn" type="submit">
           Search
         </button>
+        {q && <Link className="btn btn-ghost" href="/employees">Clear</Link>}
       </form>
 
       {developer ? (
@@ -120,7 +133,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
         >
           <div className="row gap" style={{ marginBottom: 12 }}>
             <SubmitButton className="btn btn-danger" pendingText="Deleting…">Delete selected</SubmitButton>
-            <span className="muted small">Select employees below. Their profiles and routine entries will also be deleted.</span>
+            <span className="muted small">Select employees below. Profiles and routine entries are removed with the account.</span>
           </div>
           {employeeTable}
         </ActionForm>

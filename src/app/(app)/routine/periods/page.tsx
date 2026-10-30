@@ -29,13 +29,13 @@ export default async function PeriodsPage({ searchParams }: { searchParams: Prom
         </Link>
       </PageHead>
 
-      <div className="seg">
+      <nav className="seg" aria-label="Choose a wing">
         {(['junior', 'senior'] as Section[]).map((s) => (
-          <Link key={s} href={`/routine/periods?section=${s}`} className={s === section ? 'active' : ''}>
+          <Link key={s} href={`/routine/periods?section=${s}`} className={s === section ? 'active' : ''} aria-current={s === section ? 'page' : undefined}>
             {SECTION_LABELS[s]}
           </Link>
         ))}
-      </div>
+      </nav>
 
       <div className="card">
         <ActionForm action={savePeriods.bind(null, section)}>

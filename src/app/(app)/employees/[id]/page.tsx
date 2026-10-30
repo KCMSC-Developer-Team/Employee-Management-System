@@ -63,12 +63,29 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHead title={target.name} sub={`${target.designation}${target.email ? ` · ${target.email}` : ''}`}>
+      <PageHead title="Employee profile" sub="Staff record and account access">
         <Link className="btn btn-secondary no-print" href="/employees">
           ← All employees
         </Link>
         {canDetails && <PrintButton label="Print profile" />}
       </PageHead>
+
+      <section className="card employee-summary no-print">
+        <Avatar id={target.id} name={target.name} has={target.has_photo} v={target.photo_version} size={62} />
+        <div className="employee-summary-main">
+          <h2>{target.name}</h2>
+          <p className="muted">{target.designation}</p>
+        </div>
+        <div className="employee-summary-facts">
+          <div><span>Employee ID</span><strong>{target.id_no || 'Not set'}</strong></div>
+          <div><span>Wing</span><strong>{target.wing === 'junior' ? 'Junior' : target.wing === 'senior' ? 'Senior' : 'Unassigned'}</strong></div>
+          <div><span>E-mail</span><strong>{target.email || 'Not provided'}</strong></div>
+        </div>
+        <div className="employee-summary-status">
+          <span className={`chip ${target.active ? 'chip-green' : 'chip-red'}`}>{target.active ? 'Active' : 'Inactive'}</span>
+          <span className={`chip ${target.has_password ? 'chip-grey' : 'chip-gold'}`}>{target.has_password ? 'Password set' : 'Setup pending'}</span>
+        </div>
+      </section>
 
       {canDetails ? (
         <div className="card print-area">
@@ -105,18 +122,7 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
             </div>
           </dl>
         </div>
-      ) : (
-        <div className="card row gap">
-          <Avatar id={target.id} name={target.name} has={target.has_photo} v={target.photo_version} size={72} />
-          <div>
-            <strong>{target.name}</strong>
-            <div className="muted">{target.designation}</div>
-            <div className="muted">{target.email || 'No e-mail address'}</div>
-            <div className="muted">ID: {target.id_no || '—'}</div>
-            {data.mobile && <div className="muted">{data.mobile}</div>}
-          </div>
-        </div>
-      )}
+      ) : null}
 
       <div className="grid-2 no-print" style={{ marginTop: 20 }}>
         {canManage && (

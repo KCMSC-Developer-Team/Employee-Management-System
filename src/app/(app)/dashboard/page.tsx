@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { PageHead } from '@/components/ui';
 import { requireUser } from '@/lib/auth';
 import { one, query } from '@/lib/db';
-import { can } from '@/lib/roles';
+import { can, ROLE_LABELS } from '@/lib/roles';
 import { DAY_NAMES, fmtRange, SECTION_LABELS, toMin } from '@/lib/routine';
 import type { Section } from '@/lib/types';
 import { dhakaNow, fmtDate } from '@/lib/utils';
@@ -42,12 +42,17 @@ export default async function Dashboard() {
 
   const next = today.find((t) => toMin(t.end_time) > now.minutes);
   const ongoing = next && toMin(next.start_time) <= now.minutes;
+  const canManagePeople = can(r, 'it');
+  const canCoordinate = can(r, 'coordinator');
+  const roleText = r.map((role) => ROLE_LABELS[role]).join(', ');
 
   return (
     <>
-      <PageHead title={`Hello, ${user.name.split(' ')[0]}`} sub={`${user.designation} · ${DAY_NAMES[now.day]}, ${fmtDate(now.date)}`} />
+      <PageHead title={`Hello, ${user.name.split(' ')[0]}`} sub={`${user.designation} · ${roleText} · ${DAY_NAMES[now.day]}, ${fmtDate(now.date)}`} />
 
-      <div className="grid-3">
+      <div className="dashboard-overview">
+        <div className="dashboard-primary">
+      <div className="grid-3 dashboard-stats">
         {isMentor && (
           <div className="card stat">
             <div className="stat-label">{ongoing ? 'Class now' : 'Your next class today'}</div>
@@ -92,7 +97,7 @@ export default async function Dashboard() {
       </div>
 
       {isMentor && (
-        <div className="card" style={{ marginTop: 20 }}>
+        <div className="card dashboard-section">
           <div className="row between">
             <h2>Today’s classes</h2>
             <Link href="/my-routine">Full routine</Link>
@@ -100,6 +105,7 @@ export default async function Dashboard() {
           {today.length === 0 ? (
             <p className="muted">You have no classes today.</p>
           ) : (
+            <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
@@ -122,15 +128,29 @@ export default async function Dashboard() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}
 
-      <div className="card" style={{ marginTop: 20 }}>
-        <h2>Need help?</h2>
-        <p className="muted">
-          Press the round <span className="chip">i</span> button at the top of any page. It explains that page step by step.
-        </p>
+        </div>
+        <aside className="dashboard-secondary">
+          <section className="card dashboard-section">
+            <h2>Quick access</h2>
+            <div className="quick-links">
+              {canManagePeople && <Link href="/employees/new"><span className="quick-link-icon">+</span><span><strong>Add employee</strong><small>Create an employee account</small></span></Link>}
+              {canCoordinate && <Link href="/routine"><span className="quick-link-icon">↗</span><span><strong>Routine editor</strong><small>Manage the weekly schedules</small></span></Link>}
+              {isMentor && <Link href="/my-routine"><span className="quick-link-icon">↗</span><span><strong>My routine</strong><small>View your weekly schedule</small></span></Link>}
+              {canManagePeople && <Link href="/employees"><span className="quick-link-icon">↗</span><span><strong>Employees</strong><small>Browse employee records</small></span></Link>}
+              {approvals && <Link href="/approvals"><span className="quick-link-icon">↗</span><span><strong>Approvals</strong><small>{approvals.n ? `${approvals.n} profile change${approvals.n === 1 ? '' : 's'} waiting` : 'No pending changes'}</small></span></Link>}
+              <Link href="/profile"><span className="quick-link-icon">↗</span><span><strong>My profile</strong><small>Review your profile details</small></span></Link>
+            </div>
+          </section>
+          <section className="card dashboard-help">
+            <div className="help-mark">i</div>
+            <div><strong>Need a hand?</strong><p className="muted small">Open the help panel from the top bar for guidance on this page.</p></div>
+          </section>
+        </aside>
       </div>
     </>
   );

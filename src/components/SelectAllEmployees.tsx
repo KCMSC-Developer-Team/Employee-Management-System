@@ -8,7 +8,7 @@ export function SelectAllEmployees({ count }: { count: number }) {
       title="Select all employees on this page"
       onChange={(event) => {
         const { form, checked } = event.currentTarget;
-        form?.querySelectorAll<HTMLInputElement>('input[name="employeeIds"]').forEach((input) => {
+        form?.querySelectorAll<HTMLInputElement>('input[name="employeeIds"]:not(:disabled)').forEach((input) => {
           input.checked = checked;
         });
       }}

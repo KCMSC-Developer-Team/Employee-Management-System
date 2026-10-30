@@ -30,12 +30,12 @@ export default async function ProfilePage() {
     <>
       <PageHead title="My profile" sub="Your Profile and Performance Sheet" />
 
-      <div className="card profile-head">
+      <div className="card profile-head profile-overview">
         <Avatar id={user.id} name={user.name} has={user.has_photo} v={user.photo_version} size={96} />
         <div className="grow">
           <h2 style={{ margin: 0 }}>{user.name}</h2>
           <p className="muted" style={{ margin: '2px 0 10px' }}>
-            {user.designation} · {user.email}
+            {user.designation}{user.email ? ` · ${user.email}` : ''}
           </p>
           <PhotoUploader hasPhoto={user.has_photo} />
         </div>
@@ -57,8 +57,8 @@ export default async function ProfilePage() {
           const editable = g.fields.filter((f) => !f.admin);
           const managed = g.fields.filter((f) => f.admin);
           return (
-            <section key={g.id} className="card">
-              <h2>{g.title}</h2>
+            <section key={g.id} className="card profile-section">
+              <header className="profile-section-header"><p className="eyebrow">Profile information</p><h2>{g.title}</h2></header>
               {editable.length > 0 && (
                 <div className="form-grid">
                   {editable.map((f) => (

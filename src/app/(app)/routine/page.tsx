@@ -32,6 +32,7 @@ export default async function RoutinePage({ searchParams }: { searchParams: Prom
 
   const mine = periods.filter((p) => p.section === section);
   const others = periods.filter((p) => p.section === other);
+  const filledSlots = entries.filter((entry) => entry.section === section && entry.class_name.trim()).length;
 
   return (
     <>
@@ -41,27 +42,43 @@ export default async function RoutinePage({ searchParams }: { searchParams: Prom
         </Link>
       </PageHead>
 
-      <div className="seg" role="tablist">
-        {(['junior', 'senior'] as Section[]).map((s) => (
-          <Link key={s} href={`/routine?section=${s}&day=${day}`} className={s === section ? 'active' : ''} role="tab" aria-selected={s === section}>
-            {SECTION_LABELS[s]}
-          </Link>
-        ))}
-      </div>
-
-      <div className="tabs">
-        {DAY_ORDER.map((d) => (
-          <Link key={d} href={`/routine?section=${section}&day=${d}`} className={d === day ? 'active' : ''} role="tab" aria-selected={d === day}>
-            {DAY_NAMES[d]}
-          </Link>
-        ))}
+      <div className="routine-toolbar">
+        <nav className="seg" aria-label="Choose a wing">
+          {(['junior', 'senior'] as Section[]).map((s) => (
+            <Link key={s} href={`/routine?section=${s}&day=${day}`} className={s === section ? 'active' : ''} aria-current={s === section ? 'page' : undefined}>
+              {SECTION_LABELS[s]}
+            </Link>
+          ))}
+        </nav>
+        <nav className="routine-day-nav" aria-label="Choose a day">
+          {DAY_ORDER.map((d) => (
+            <Link key={d} href={`/routine?section=${section}&day=${d}`} className={d === day ? 'active' : ''} aria-current={d === day ? 'page' : undefined}>
+              {DAY_NAMES[d]}
+            </Link>
+          ))}
+        </nav>
       </div>
 
       <div className="card">
+        <div className="routine-editor-summary">
+          <div><span className="eyebrow">Daily assignments</span><h2>{DAY_NAMES[day]} <span className="muted">· {SECTION_LABELS[section]}</span></h2></div>
+          <div className="routine-summary-metrics">
+            <div><strong>{mentors.length}</strong><span>Mentors</span></div>
+            <div><strong>{filledSlots}</strong><span>Filled periods</span></div>
+          </div>
+        </div>
         {mentors.length === 0 ? (
-          <p className="muted">No {SECTION_LABELS[section]} mentors yet. Add mentors with this wing assigned on their employee account.</p>
+          <div className="routine-editor-empty">
+            <p className="eyebrow">{SECTION_LABELS[section]}</p>
+            <h3>No mentors assigned to this wing</h3>
+            <p className="muted">Ask an IT Technician to assign the correct wing on mentor employee accounts.</p>
+          </div>
         ) : mine.length === 0 ? (
-          <p className="muted">This section has no periods. Use “Edit periods and times” to add some.</p>
+          <div className="routine-editor-empty">
+            <h3>No periods configured</h3>
+            <p className="muted">Add periods and their times before assigning classes.</p>
+            <Link className="btn btn-secondary btn-sm" href={`/routine/periods?section=${section}`}>Edit periods and times</Link>
+          </div>
         ) : (
           <RoutineGrid
             key={`${section}-${day}`}

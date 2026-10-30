@@ -46,6 +46,16 @@ export function PageHead({ title, sub, children }: { title: string; sub?: string
   );
 }
 
+export function EmptyState({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
+  return (
+    <div className="empty-state">
+      <h2>{title}</h2>
+      <p className="muted">{description}</p>
+      {action && <div className="empty-state-action">{action}</div>}
+    </div>
+  );
+}
+
 /** One input, uncontrolled — used by the profile form and admin form. */
 export function FieldInput({ field, value }: { field: Field; value?: string }) {
   const common = { name: field.key, id: field.key, defaultValue: value ?? '' };
