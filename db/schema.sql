@@ -93,6 +93,16 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
   used_at    timestamptz
 );
 
+CREATE TABLE IF NOT EXISTS email_change_tokens (
+  token_hash text PRIMARY KEY,
+  user_id    uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  email      text NOT NULL,
+  expires_at timestamptz NOT NULL,
+  used_at    timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS email_change_tokens_user_idx ON email_change_tokens (user_id, expires_at DESC);
+
 CREATE TABLE IF NOT EXISTS periods (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   section    text NOT NULL CHECK (section IN ('junior','senior')),

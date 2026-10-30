@@ -6,6 +6,10 @@ import { one, query } from '@/lib/db';
 import { DEVELOPER_EMAIL } from '@/lib/config';
 import { fail, go, ok, str } from '@/lib/form';
 import { sendSetPasswordLinks } from '@/lib/invite';
+import { emailHtml, sendEmail } from '@/lib/mail';
+import { appUrl, isEmail } from '@/lib/utils';
+import { createHash, randomBytes } from 'node:crypto';
+import { revalidatePath } from 'next/cache';
 import type { FormState } from '@/lib/types';
 
 export async function login(_prev: FormState, fd: FormData): Promise<FormState> {
@@ -97,4 +101,64 @@ export async function emailMyResetLink(_prev: FormState, _fd: FormData): Promise
   if (!user.email) return fail('This account has no e-mail address. Ask an IT Technician to add one, or contact them to reset your password.');
   const r = await sendSetPasswordLinks([{ id: user.id, email: user.email, name: user.name }], 'reset');
   return r.ok ? ok(`A reset link was sent to ${user.email}.`) : fail('The e-mail could not be sent. Please try again later.');
+}
+
+export async function requestEmailChange(_prev: FormState, fd: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const email = str(fd, 'email', 200).toLowerCase();
+  if (!isEmail(email)) return fail('Enter a valid e-mail address.');
+  if (email === user.email?.toLowerCase()) return fail('That is already your e-mail address.');
+
+  const taken = await one('select 1 from users where lower(email) = $1 and id <> $2', [email, user.id]);
+  if (taken) return fail('That e-mail address is already linked to another account.');
+
+  const raw = randomBytes(32).toString('hex');
+  const tokenHash = createHash('sha256').update(raw).digest('hex');
+  await query('delete from email_change_tokens where user_id = $1 or expires_at <= now()', [user.id]);
+  await query(
+    `insert into email_change_tokens (token_hash, user_id, email, expires_at)
+     values ($1, $2, $3, now() + interval '1 hour')`,
+    [tokenHash, user.id, email],
+  );
+
+  const link = `${appUrl()}/verify-email?token=${raw}`;
+  const result = await sendEmail({
+    to: email,
+    subject: 'Verify your e-mail address',
+    html: emailHtml({
+      heading: 'Verify your e-mail address',
+      paragraphs: [`Hello ${user.name},`, 'Use the link below to confirm this e-mail address for your K C Model School & College account. The link expires in 1 hour.'],
+      ctaLabel: 'Verify e-mail address',
+      ctaUrl: link,
+    }),
+    text: `Verify your e-mail address: ${link}\nThis link expires in 1 hour.`,
+  });
+  if (!result.ok) {
+    await query('delete from email_change_tokens where token_hash = $1', [tokenHash]);
+    return fail('The verification e-mail could not be sent. Please try again later.');
+  }
+  return ok(`A verification link was sent to ${email}. Your current e-mail stays active until you verify it.`);
+}
+
+export async function verifyEmailChange(_prev: FormState, fd: FormData): Promise<FormState> {
+  const raw = str(fd, 'token', 200);
+  if (!/^[a-f0-9]{64}$/.test(raw)) return fail('This verification link is invalid or expired. Request a new one from Settings.');
+  const tokenHash = createHash('sha256').update(raw).digest('hex');
+  const changed = await one<{ email: string }>(
+    `with valid_token as (
+       update email_change_tokens set used_at = now()
+        where token_hash = $1 and used_at is null and expires_at > now()
+        returning user_id, email
+     )
+     update users u set email = v.email
+       from valid_token v
+      where u.id = v.user_id
+        and not exists (select 1 from users other where lower(other.email) = lower(v.email) and other.id <> u.id)
+     returning u.email`,
+    [tokenHash],
+  );
+  if (!changed) return fail('This link has expired, was already used, or the e-mail is now linked to another account. Request a new link from Settings.');
+  revalidatePath('/settings');
+  revalidatePath('/employees');
+  return ok(`Your e-mail address is now ${changed.email}.`);
 }

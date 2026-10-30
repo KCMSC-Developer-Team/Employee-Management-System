@@ -1,4 +1,4 @@
-import { changePassword, emailMyResetLink } from '@/actions/auth';
+import { changePassword, emailMyResetLink, requestEmailChange } from '@/actions/auth';
 import { savePrefs } from '@/actions/misc';
 import { ActionForm, SubmitButton } from '@/components/ActionForm';
 import { PushToggle } from '@/components/PushToggle';
@@ -35,6 +35,17 @@ export default async function SettingsPage() {
         </section>
 
         <section className="card settings-section">
+          <header className="settings-section-header"><div><p className="eyebrow">Account</p><h2>E-mail address</h2></div></header>
+          <p className="muted">Current address: <strong>{user.email || 'Not set'}</strong></p>
+          <p className="muted small">We’ll send a verification link to the new address. It will only be saved after you open that link.</p>
+          <ActionForm action={requestEmailChange} className="stack" resetOnSuccess>
+            <div className="field">
+              <label htmlFor="account-email">New e-mail address</label>
+              <input id="account-email" name="email" type="email" className="input" autoComplete="email" maxLength={200} required />
+            </div>
+            <div><SubmitButton pendingText="Sending verification link…">Add or change e-mail</SubmitButton></div>
+          </ActionForm>
+          <hr />
           <header className="settings-section-header"><div><p className="eyebrow">Security</p><h2>Password</h2></div></header>
           <ActionForm action={changePassword} className="stack" resetOnSuccess>
             <div className="field">

@@ -106,8 +106,9 @@ const HELP: { match: (p: string) => boolean; help: Help }[] = [
     match: (p) => p === '/settings',
     help: {
       title: 'Settings',
-      summary: 'Notifications and password.',
+      summary: 'E-mail address, notifications and password.',
       steps: [
+        'Add or change your e-mail address here. The new address is saved only after you open its verification link.',
         'Every notification is sent by browser and by e-mail. You can switch one of them off.',
         'You cannot switch both off at the same time.',
         'To get browser notifications, press “Enable on this browser” and allow it when your browser asks.',
