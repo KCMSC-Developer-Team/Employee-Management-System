@@ -5,7 +5,8 @@ import { requireRole, requireUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { fail, ok, str } from '@/lib/form';
 import { notify } from '@/lib/notify';
-import type { FormState } from '@/lib/types';
+import { ALL_ROLES, ROLE_LABELS } from '@/lib/roles';
+import type { FormState, Role } from '@/lib/types';
 
 /* Objections — added by an Authority, readable only by that employee (and a Developer). */
 export async function addObjection(userId: string, _prev: FormState, fd: FormData): Promise<FormState> {
@@ -43,4 +44,21 @@ export async function savePrefs(_prev: FormState, fd: FormData): Promise<FormSta
   await query('update users set notif_push = $2, notif_email = $3 where id = $1', [user.id, push, email]);
   revalidatePath('/settings');
   return ok('Notification settings saved.');
+}
+
+export async function sendCustomNotification(_prev: FormState, fd: FormData): Promise<FormState> {
+  await requireRole('developer');
+  const audience = str(fd, 'audience', 40);
+  const title = str(fd, 'title', 120);
+  const body = str(fd, 'body', 2000);
+  if (!title || !body) return fail('Enter both a title and a message.');
+  if (audience !== 'everyone' && !ALL_ROLES.includes(audience as Role)) return fail('Choose a valid audience.');
+
+  const recipients = audience === 'everyone'
+    ? await query<{ id: string }>('select id from users where active = true')
+    : await query<{ id: string }>('select id from users where active = true and $1 = any(roles)', [audience]);
+  if (recipients.length === 0) return fail(`No active users have the ${audience === 'everyone' ? 'selected audience' : ROLE_LABELS[audience as Role] + ' role'}.`);
+
+  await notify(recipients.map((user) => user.id), { title, body, url: '/notifications' });
+  return ok(`Notification sent to ${recipients.length} active user${recipients.length === 1 ? '' : 's'}.`);
 }

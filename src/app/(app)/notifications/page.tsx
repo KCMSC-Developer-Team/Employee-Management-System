@@ -4,6 +4,7 @@ import { EmptyState, PageHead } from '@/components/ui';
 import { requireUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { fmtDateTime } from '@/lib/utils';
+import { isDeveloper } from '@/lib/roles';
 
 export const metadata = { title: 'Notifications' };
 
@@ -18,6 +19,7 @@ export default async function NotificationsPage() {
   return (
     <>
       <PageHead title="Notifications" sub={unread ? `${unread} unread` : 'You are all caught up.'}>
+        {isDeveloper(user.roles) && <Link href="/notifications/compose" className="btn">Send notification</Link>}
         {unread > 0 && (
           <form action={markAllRead}>
             <button className="btn btn-secondary" type="submit">
