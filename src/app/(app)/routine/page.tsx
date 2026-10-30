@@ -20,7 +20,8 @@ export default async function RoutinePage({ searchParams }: { searchParams: Prom
   const [periods, mentors, entries, classes] = await Promise.all([
     query<Period>('select * from periods order by section, position'),
     query<{ id: string; name: string; designation: string }>(
-      `select id, name, designation from users where active = true and 'mentor' = any(roles) order by name`,
+      `select id, name, designation from users where active = true and wing = $1 and 'mentor' = any(roles) order by name`,
+      [section],
     ),
     query<{ section: Section; mentor_id: string; period_id: string; class_name: string }>(
       'select section, mentor_id, period_id, class_name from routine_entries where day = $1',
@@ -58,7 +59,7 @@ export default async function RoutinePage({ searchParams }: { searchParams: Prom
 
       <div className="card">
         {mentors.length === 0 ? (
-          <p className="muted">No mentors yet. Ask an IT Technician to add employees with the Mentor role.</p>
+          <p className="muted">No {SECTION_LABELS[section]} mentors yet. Add mentors with this wing assigned on their employee account.</p>
         ) : mine.length === 0 ? (
           <p className="muted">This section has no periods. Use “Edit periods and times” to add some.</p>
         ) : (

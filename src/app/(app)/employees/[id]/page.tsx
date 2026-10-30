@@ -26,13 +26,14 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
     email: string | null;
     id_no: string | null;
     designation: string;
+    wing: string | null;
     roles: Role[];
     active: boolean;
     has_photo: boolean;
     photo_version: number;
     has_password: boolean;
   }>(
-    `select id, name, email, id_no, designation, roles, active, (photo is not null) as has_photo, photo_version,
+    `select id, name, email, id_no, wing, designation, roles, active, (photo is not null) as has_photo, photo_version,
             (password_hash is not null) as has_password from users where id = $1`,
     [id],
   );
@@ -129,6 +130,15 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
               <div className="field">
                 <label htmlFor="designation">Designation</label>
                 <input id="designation" name="designation" className="input" defaultValue={target.designation} required />
+              </div>
+              <div className="field">
+                <label htmlFor="wing">Wing</label>
+                <select id="wing" name="wing" className="input" defaultValue={target.wing || ''} required>
+                  <option value="" disabled>Choose a wing</option>
+                  <option value="junior">Junior</option>
+                  <option value="senior">Senior</option>
+                </select>
+                {!target.wing && <p className="muted small">Assign a wing to include this employee in the correct routine editor.</p>}
               </div>
               <div className="field">
                 <label>Roles</label>

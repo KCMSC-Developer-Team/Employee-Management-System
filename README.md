@@ -63,7 +63,7 @@ Each mentor is reminded once per class per day.
 | **Bulk import with preview of which header goes where** | `/employees/import` — file → column matching (auto-guessed, editable) → preview with a "→ imported as" label above every column → problem rows skipped |
 | **Authority** — sees full list, adds private objections, prints one or all profiles | `/employees`, `/employees/[id]`, `/employees/print` |
 | Objection visible only to that employee (and Developer) | `/objections`; the employee page shows them only to Developer, and to the Authority who wrote them |
-| **Routine Coordinator** — mentors vertical, periods horizontal, Junior / Senior | `/routine` (day tabs, section switch, editable period names/times at `/routine/periods`) |
+| **Routine Coordinator** — mentors vertical, periods horizontal, Junior / Senior wings | `/routine` (each editor shows mentors assigned to that wing; day tabs, wing switch, editable period names/times at `/routine/periods`) |
 | Smart editor warns about doubles / overlaps | `src/lib/routine.ts` — same class booked twice at overlapping times, and a mentor in two places at once (also across sections) |
 | Routine changes pushed as notifications | every mentor whose row changed is notified on save |
 | **Mentor** — own profile, edits need approval | `/profile` → `/approvals` (Developer / IT Technician / Authority; nobody approves their own) |

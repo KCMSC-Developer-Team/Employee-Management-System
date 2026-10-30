@@ -28,6 +28,14 @@ export default async function NewEmployee() {
               <input id="id_no" name="id_no" className="input" required />
             </div>
             <div className="field">
+              <label htmlFor="wing">Wing <span className="req">*</span></label>
+              <select id="wing" name="wing" className="input" required defaultValue="">
+                <option value="" disabled>Choose a wing</option>
+                <option value="junior">Junior</option>
+                <option value="senior">Senior</option>
+              </select>
+            </div>
+            <div className="field">
               <label htmlFor="designation">Designation <span className="req">*</span></label>
               <input id="designation" name="designation" className="input" placeholder="e.g. Assistant Teacher" required />
             </div>

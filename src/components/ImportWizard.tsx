@@ -7,13 +7,14 @@ import { ROLE_LABELS } from '@/lib/roles';
 import { isEmail } from '@/lib/utils';
 import type { Role } from '@/lib/types';
 
-type FieldKey = 'name' | 'email' | 'designation' | 'roles' | 'mobile' | 'id_no' | 'position' | 'dept' | 'date_of_joining' | 'supervisor';
+type FieldKey = 'name' | 'email' | 'designation' | 'roles' | 'wing' | 'mobile' | 'id_no' | 'position' | 'dept' | 'date_of_joining' | 'supervisor';
 
 const FIELDS: { key: FieldKey; label: string; required?: boolean; hint?: string }[] = [
   { key: 'name', label: 'Full name', required: true },
   { key: 'email', label: 'E-mail' },
   { key: 'designation', label: 'Designation', hint: 'or set one default below' },
   { key: 'roles', label: 'Role(s)', hint: 'or tick default roles below' },
+  { key: 'wing', label: 'Wing', required: true, hint: 'Junior or Senior' },
   { key: 'mobile', label: 'Mobile number' },
   { key: 'id_no', label: 'ID No.' },
   { key: 'position', label: 'Position' },
@@ -27,6 +28,7 @@ const SYNONYMS: Record<FieldKey, string[]> = {
   email: ['email', 'e mail', 'email address', 'e mail address', 'mail'],
   designation: ['designation', 'post', 'job title', 'title'],
   roles: ['role', 'roles', 'user role', 'access'],
+  wing: ['wing', 'school wing', 'section', 'school section'],
   mobile: ['mobile', 'mobile number', 'mobile no', 'phone', 'phone number', 'contact', 'contact number', 'cell'],
   id_no: ['id', 'id no', 'employee id', 'emp id', 'staff id'],
   position: ['position', 'rank', 'grade'],
@@ -126,6 +128,8 @@ export function ImportWizard({ assignable }: { assignable: Role[] }) {
       const email = get('email').toLowerCase();
       const designation = get('designation') || (mapping.designation < 0 ? defaultDesignation.trim() : '');
       let roles: Role[] = defaultRoles.filter((x) => assignable.includes(x));
+      const wingText = get('wing').trim().toLowerCase();
+      const wing = /^(junior|junior wing)$/.test(wingText) ? 'junior' : /^(senior|senior wing)$/.test(wingText) ? 'senior' : '';
       const warnings: string[] = [];
       if (mapping.roles >= 0) {
         const p = parseRoles(get('roles'), assignable);
@@ -134,6 +138,7 @@ export function ImportWizard({ assignable }: { assignable: Role[] }) {
       }
       const problems: string[] = [];
       if (!get('name')) problems.push('name is empty');
+      if (!wing) problems.push('wing must be Junior or Senior');
       if (email && !isEmail(email)) problems.push('e-mail is not valid');
       else if (email && seen.has(`email:${email}`)) problems.push('e-mail is repeated in the file');
       if (email) seen.add(`email:${email}`);
@@ -147,6 +152,7 @@ export function ImportWizard({ assignable }: { assignable: Role[] }) {
         email,
         designation,
         roles,
+        wing,
         mobile: get('mobile'),
         id_no: get('id_no'),
         position: get('position'),
@@ -170,8 +176,13 @@ export function ImportWizard({ assignable }: { assignable: Role[] }) {
 
   function run() {
     start(async () => {
-      const r = await importUsers(ready.map((b) => b.row));
-      setResult(r);
+      setError('');
+      try {
+        const r = await importUsers(ready.map((b) => b.row));
+        setResult(r);
+      } catch {
+        setError('The import could not be completed. Please try again.');
+      }
     });
   }
 
@@ -319,6 +330,13 @@ export function ImportWizard({ assignable }: { assignable: Role[] }) {
             <button className="btn" type="button" disabled={pending || ready.length === 0 || missing.length > 0} onClick={run}>
               {pending ? 'Importing…' : `Import ${ready.length} account(s)`}
             </button>
+            {pending && (
+              <div role="status" aria-live="polite" style={{ marginTop: 14 }}>
+                <p className="muted small" style={{ margin: '0 0 6px' }}>Creating {ready.length} accounts…</p>
+                <progress aria-label="Importing contacts" style={{ display: 'block', width: '100%', height: 10 }} />
+              </div>
+            )}
+            {error && <div className="alert alert-err" style={{ marginTop: 12 }}>{error}</div>}
           </div>
         </>
       )}

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email         text,
   id_no         text,
+  wing          text,
   name          text NOT NULL,
   designation   text NOT NULL DEFAULT 'Employee',
   roles         text[] NOT NULL DEFAULT '{}',
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS id_no text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS wing text;
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_idx ON users (lower(email)) WHERE email IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS users_id_no_idx ON users (id_no) WHERE id_no IS NOT NULL;
 
@@ -32,6 +34,10 @@ CREATE TABLE IF NOT EXISTS profiles (
 UPDATE users u SET id_no = p.data->>'id_no'
   FROM profiles p
  WHERE u.id = p.user_id AND u.id_no IS NULL AND nullif(p.data->>'id_no', '') IS NOT NULL;
+
+UPDATE users u SET wing = p.data->>'wing'
+  FROM profiles p
+ WHERE u.id = p.user_id AND u.wing IS NULL AND p.data->>'wing' IN ('junior','senior');
 
 CREATE TABLE IF NOT EXISTS profile_edits (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -110,6 +116,16 @@ CREATE TABLE IF NOT EXISTS routine_entries (
 );
 
 CREATE INDEX IF NOT EXISTS routine_entries_day_idx ON routine_entries (day, section);
+
+UPDATE users u
+   SET wing = assignment.section
+  FROM (
+    SELECT mentor_id, min(section) AS section
+      FROM routine_entries
+     GROUP BY mentor_id
+    HAVING count(DISTINCT section) = 1
+  ) assignment
+ WHERE u.id = assignment.mentor_id AND u.wing IS NULL;
 
 CREATE TABLE IF NOT EXISTS reminder_log (
   mentor_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,

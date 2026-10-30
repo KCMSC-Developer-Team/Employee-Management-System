@@ -149,7 +149,7 @@ const HELP: { match: (p: string) => boolean; help: Help }[] = [
         '1. Choose your file. The first row must contain column headings.',
         '2. Check the preview. Above each column you can see what it will be imported as. Change a match if it is wrong.',
         '3. Fix any rows marked with a problem, or leave them — they are skipped.',
-        '4. Press “Import”. Each employee starts with their ID number as both sign-in ID and password. Invitation e-mails are sent when an e-mail address is provided.',
+        '4. Select or map each employee’s wing (Junior or Senior), then press “Import”. Each employee starts with their ID number as both sign-in ID and password. Invitation e-mails are sent when an e-mail address is provided.',
       ],
     },
   },

@@ -31,6 +31,7 @@ export async function createUser(_prev: FormState, fd: FormData): Promise<FormSt
   const name = str(fd, 'name', 120);
   const email = str(fd, 'email', 200).toLowerCase();
   const idNo = str(fd, 'id_no', 100);
+  const wing = str(fd, 'wing', 20).toLowerCase();
   const designation = str(fd, 'designation', 120);
   const mobile = str(fd, 'mobile', 40);
   const roles = cleanRoles(fd.getAll('roles').map(String), actor.roles);
@@ -39,6 +40,7 @@ export async function createUser(_prev: FormState, fd: FormData): Promise<FormSt
   if (!name) return fail('Enter the full name.');
   if (email && !isEmail(email)) return fail('Enter a valid e-mail address.');
   if (!idNo) return fail('Enter the employee ID number.');
+  if (wing !== 'junior' && wing !== 'senior') return fail('Choose the employee’s wing.');
   if (!designation) return fail('Enter the designation.');
   if (roles.length === 0) return fail('Tick at least one role.');
 
@@ -46,13 +48,13 @@ export async function createUser(_prev: FormState, fd: FormData): Promise<FormSt
   if (exists) return fail('An account with this e-mail or ID number already exists.');
 
   const created = await one<{ id: string }>(
-    'insert into users (email, id_no, name, designation, roles, password_hash) values ($1,$2,$3,$4,$5,$6) returning id',
-    [email || null, idNo, name, designation, roles, await hashPassword(idNo)],
+    'insert into users (email, id_no, wing, name, designation, roles, password_hash) values ($1,$2,$3,$4,$5,$6,$7) returning id',
+    [email || null, idNo, wing, name, designation, roles, await hashPassword(idNo)],
   );
   if (!created) return fail('Could not create the account.');
   await query('insert into profiles (user_id, data) values ($1, $2::jsonb)', [
     created.id,
-    JSON.stringify({ ...(mobile ? { mobile } : {}), id_no: idNo }),
+    JSON.stringify({ ...(mobile ? { mobile } : {}), id_no: idNo, wing }),
   ]);
 
   revalidatePath('/employees');
@@ -67,6 +69,7 @@ export type ImportRow = {
   roles: string[];
   mobile?: string;
   id_no?: string;
+  wing?: string;
   position?: string;
   dept?: string;
   date_of_joining?: string;
@@ -109,6 +112,7 @@ export async function importUsers(rows: ImportRow[]): Promise<ImportResult> {
     const r = rows[i];
     const email = emails[i];
     const idNo = ids[i];
+    const wing = String(r.wing ?? '').trim().toLowerCase();
     const name = String(r.name ?? '').trim().slice(0, 120);
     const designation = String(r.designation ?? '').trim().slice(0, 120);
     const roles = cleanRoles((r.roles ?? []).map(String), actor.roles);
@@ -117,6 +121,7 @@ export async function importUsers(rows: ImportRow[]): Promise<ImportResult> {
     if (!name) { skipped.push({ line, email, reason: 'Name is empty' }); continue; }
     if (email && !isEmail(email)) { skipped.push({ line, email, reason: 'E-mail is not valid' }); continue; }
     if (!idNo) { skipped.push({ line, email, reason: 'ID number is empty' }); continue; }
+    if (wing !== 'junior' && wing !== 'senior') { skipped.push({ line, email, reason: 'Wing must be Junior or Senior' }); continue; }
     if (!designation) { skipped.push({ line, email, reason: 'Designation is empty' }); continue; }
     if (roles.length === 0) { skipped.push({ line, email, reason: 'No role you are allowed to assign' }); continue; }
     if ((email && taken.has(email)) || takenIds.has(idNo)) { skipped.push({ line, email, reason: 'Account already exists' }); continue; }
@@ -132,12 +137,12 @@ export async function importUsers(rows: ImportRow[]): Promise<ImportResult> {
 
     try {
       const u = await one<{ id: string }>(
-        'insert into users (email, id_no, name, designation, roles, password_hash) values ($1,$2,$3,$4,$5,$6) returning id',
-        [email || null, idNo, name, designation, roles, await hashPassword(idNo)],
+        'insert into users (email, id_no, wing, name, designation, roles, password_hash) values ($1,$2,$3,$4,$5,$6,$7) returning id',
+        [email || null, idNo, wing, name, designation, roles, await hashPassword(idNo)],
       );
       if (!u) throw new Error('insert failed');
       await query('insert into profiles (user_id, data) values ($1, $2::jsonb)', [u.id, JSON.stringify(data)]);
-      await query('update profiles set data = data || $2::jsonb where user_id = $1', [u.id, JSON.stringify({ id_no: idNo })]);
+      await query('update profiles set data = data || $2::jsonb where user_id = $1', [u.id, JSON.stringify({ id_no: idNo, wing })]);
       createdCount++;
       if (email) createdUsers.push({ id: u.id, email, name });
     } catch {
@@ -176,7 +181,9 @@ export async function updateUser(id: string, _prev: FormState, fd: FormData): Pr
 
   const name = str(fd, 'name', 120);
   const designation = str(fd, 'designation', 120);
+  const wing = str(fd, 'wing', 20).toLowerCase();
   if (!name || !designation) return fail('Name and designation are required.');
+  if (wing !== 'junior' && wing !== 'senior') return fail('Choose the employee’s wing.');
 
   const mine = assignableRoles(actor.roles) as string[];
   const kept = target.roles.filter((r) => !mine.includes(r)); // roles this actor cannot touch stay as they are
@@ -190,12 +197,13 @@ export async function updateUser(id: string, _prev: FormState, fd: FormData): Pr
     return fail('There must always be at least one active Developer.');
   }
 
-  await query('update users set name=$2, designation=$3, roles=$4, active=$5 where id=$1', [
+  await query('update users set name=$2, designation=$3, roles=$4, active=$5, wing=$6 where id=$1', [
     id,
     name,
     designation,
     roles,
     active,
+    wing,
   ]);
   revalidatePath(`/employees/${id}`);
   revalidatePath('/employees');
@@ -225,4 +233,37 @@ export async function deleteUser(id: string, _prev: FormState, _fd: FormData): P
   await query('delete from users where id = $1', [id]);
   revalidatePath('/employees');
   return go('/employees');
+}
+
+export async function bulkDeleteEmployees(_prev: FormState, fd: FormData): Promise<FormState> {
+  const actor = await requireRole('developer');
+  const submitted = fd.getAll('employeeIds').map(String);
+  const ids = Array.from(new Set(submitted));
+  if (ids.length === 0) return fail('Select at least one employee.');
+  if (ids.length > 1000 || ids.some((id) => !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))) {
+    return fail('The selected employee list is invalid.');
+  }
+  if (ids.includes(actor.id)) return fail('You cannot delete your own account.');
+
+  const deleted = await query<{ id: string }>(
+    `with guard as (
+       select count(*) filter (where id = any($1::uuid[]))::int as selected_count,
+              count(*) filter (where active = true and 'developer' = any(roles) and id <> all($1::uuid[]))::int as remaining_developers
+         from users
+     )
+     delete from users u using guard
+      where u.id = any($1::uuid[])
+        and guard.selected_count = cardinality($1::uuid[])
+        and guard.remaining_developers > 0
+      returning u.id`,
+    [ids],
+  );
+  if (deleted.length !== ids.length) {
+    return fail('No accounts were deleted. Refresh the list and make sure at least one active Developer will remain.');
+  }
+  revalidatePath('/employees');
+  revalidatePath('/routine');
+  revalidatePath('/my-routine');
+  revalidatePath('/directory');
+  return ok(`${deleted.length} employee account(s) deleted.`);
 }
