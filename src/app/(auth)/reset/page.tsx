@@ -26,16 +26,16 @@ export default async function ResetPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <h2 className="center" style={{ marginTop: 20 }}>Choose your password</h2>
-      <p className="muted center">Use at least 8 characters.</p>
+      <p className="muted center">Choose a password of any length.</p>
       <ActionForm action={resetPassword} className="stack">
         <input type="hidden" name="token" value={token} />
         <div className="field">
           <label htmlFor="password">New password</label>
-          <input id="password" name="password" type="password" className="input" minLength={8} autoComplete="new-password" required autoFocus />
+          <input id="password" name="password" type="password" className="input" autoComplete="new-password" required autoFocus />
         </div>
         <div className="field">
           <label htmlFor="confirm">Type it again</label>
-          <input id="confirm" name="confirm" type="password" className="input" minLength={8} autoComplete="new-password" required />
+          <input id="confirm" name="confirm" type="password" className="input" autoComplete="new-password" required />
         </div>
         <SubmitButton className="btn btn-block" pendingText="Saving…">
           Save password

@@ -9,16 +9,16 @@ import { sendSetPasswordLinks } from '@/lib/invite';
 import type { FormState } from '@/lib/types';
 
 export async function login(_prev: FormState, fd: FormData): Promise<FormState> {
-  const email = str(fd, 'email', 200).toLowerCase();
+  const identifier = str(fd, 'email', 200).toLowerCase();
   const password = String(fd.get('password') ?? '');
-  if (!email || !password) return fail('Enter your e-mail and password.');
+  if (!identifier || !password) return fail('Enter your e-mail or ID number and password.');
 
   const user = await one<{ id: string; password_hash: string | null }>(
-    'select id, password_hash from users where lower(email) = $1 and active = true',
-    [email],
+    'select id, password_hash from users where (lower(email) = $1 or id_no = $1) and active = true',
+    [identifier],
   );
   const good = await verifyPassword(password, user?.password_hash);
-  if (!user || !good) return fail('E-mail or password is not correct.');
+  if (!user || !good) return fail('E-mail/ID or password is not correct.');
 
   await createSession(user.id);
   return go('/dashboard');
@@ -70,7 +70,7 @@ export async function resetPassword(_prev: FormState, fd: FormData): Promise<For
   const token = str(fd, 'token', 200);
   const pw = String(fd.get('password') ?? '');
   const confirm = String(fd.get('confirm') ?? '');
-  if (pw.length < 8) return fail('Password must be at least 8 characters.');
+  if (!pw) return fail('Enter a password.');
   if (pw !== confirm) return fail('The two passwords do not match.');
   const userId = await peekToken(token);
   if (!userId) return fail('This link has expired or was already used. Please ask for a new one.');
@@ -84,7 +84,7 @@ export async function changePassword(_prev: FormState, fd: FormData): Promise<Fo
   const current = String(fd.get('current') ?? '');
   const pw = String(fd.get('password') ?? '');
   const confirm = String(fd.get('confirm') ?? '');
-  if (pw.length < 8) return fail('New password must be at least 8 characters.');
+  if (!pw) return fail('Enter a new password.');
   if (pw !== confirm) return fail('The two new passwords do not match.');
   const row = await one<{ password_hash: string | null }>('select password_hash from users where id = $1', [user.id]);
   if (!(await verifyPassword(current, row?.password_hash))) return fail('Your current password is not correct.');
@@ -94,6 +94,7 @@ export async function changePassword(_prev: FormState, fd: FormData): Promise<Fo
 
 export async function emailMyResetLink(_prev: FormState, _fd: FormData): Promise<FormState> {
   const user = await requireUser();
+  if (!user.email) return fail('This account has no e-mail address. Ask an IT Technician to add one, or contact them to reset your password.');
   const r = await sendSetPasswordLinks([{ id: user.id, email: user.email, name: user.name }], 'reset');
   return r.ok ? ok(`A reset link was sent to ${user.email}.`) : fail('The e-mail could not be sent. Please try again later.');
 }

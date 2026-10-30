@@ -23,7 +23,8 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
   const target = await one<{
     id: string;
     name: string;
-    email: string;
+    email: string | null;
+    id_no: string | null;
     designation: string;
     roles: Role[];
     active: boolean;
@@ -31,7 +32,7 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
     photo_version: number;
     has_password: boolean;
   }>(
-    `select id, name, email, designation, roles, active, (photo is not null) as has_photo, photo_version,
+    `select id, name, email, id_no, designation, roles, active, (photo is not null) as has_photo, photo_version,
             (password_hash is not null) as has_password from users where id = $1`,
     [id],
   );
@@ -61,7 +62,7 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHead title={target.name} sub={`${target.designation} · ${target.email}`}>
+      <PageHead title={target.name} sub={`${target.designation}${target.email ? ` · ${target.email}` : ''}`}>
         <Link className="btn btn-secondary no-print" href="/employees">
           ← All employees
         </Link>
@@ -95,7 +96,11 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
             </div>
             <div>
               <dt>E-mail</dt>
-              <dd>{target.email}</dd>
+              <dd>{target.email || '—'}</dd>
+            </div>
+            <div>
+              <dt>ID number</dt>
+              <dd>{target.id_no || '—'}</dd>
             </div>
           </dl>
         </div>
@@ -105,7 +110,8 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
           <div>
             <strong>{target.name}</strong>
             <div className="muted">{target.designation}</div>
-            <div className="muted">{target.email}</div>
+            <div className="muted">{target.email || 'No e-mail address'}</div>
+            <div className="muted">ID: {target.id_no || '—'}</div>
             {data.mobile && <div className="muted">{data.mobile}</div>}
           </div>
         </div>

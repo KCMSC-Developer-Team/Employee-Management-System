@@ -11,7 +11,7 @@ export default async function Directory({ searchParams }: { searchParams: Promis
     id: string;
     name: string;
     designation: string;
-    email: string;
+    email: string | null;
     has_photo: boolean;
     photo_version: number;
     mobile: string | null;
@@ -58,13 +58,11 @@ export default async function Directory({ searchParams }: { searchParams: Promis
                       Call
                     </a>
                   )}
-                  <a className="btn btn-secondary btn-sm" href={`mailto:${m.email}`}>
-                    Email
-                  </a>
+                  {m.email && <a className="btn btn-secondary btn-sm" href={`mailto:${m.email}`}>Email</a>}
                 </div>
                 <div className="muted small" style={{ marginTop: 8 }}>
                   {m.mobile && <div>{m.mobile}</div>}
-                  <div>{m.email}</div>
+                  {m.email && <div>{m.email}</div>}
                 </div>
               </div>
             </div>

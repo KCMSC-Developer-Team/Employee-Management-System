@@ -11,7 +11,7 @@ export default async function PrintAll() {
     id: string;
     name: string;
     designation: string;
-    email: string;
+    email: string | null;
     has_photo: boolean;
     photo_version: number;
     data: Record<string, string> | null;
@@ -39,7 +39,7 @@ export default async function PrintAll() {
                   <div className="school">K C MODEL SCHOOL &amp; COLLEGE</div>
                   <div className="doc">Profile and Performance Sheet</div>
                   <div style={{ marginTop: 6 }}>
-                    <strong>{u.name}</strong> · {u.designation} · {u.email}
+                    <strong>{u.name}</strong> · {u.designation}{u.email ? ` · ${u.email}` : ''}
                   </div>
                 </div>
                 <Avatar id={u.id} name={u.name} has={u.has_photo} v={u.photo_version} size={84} />

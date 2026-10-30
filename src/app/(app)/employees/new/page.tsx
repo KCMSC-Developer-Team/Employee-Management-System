@@ -11,7 +11,7 @@ export default async function NewEmployee() {
   const roles = assignableRoles(actor.roles);
   return (
     <>
-      <PageHead title="Add an employee" sub="They will receive an e-mail to choose their own password." />
+      <PageHead title="Add an employee" sub="They can sign in with their ID number; their initial password is the same ID." />
       <div className="card" style={{ maxWidth: 680 }}>
         <ActionForm action={createUser} className="stack" resetOnSuccess>
           <div className="form-grid">
@@ -20,8 +20,12 @@ export default async function NewEmployee() {
               <input id="name" name="name" className="input" required />
             </div>
             <div className="field">
-              <label htmlFor="email">E-mail <span className="req">*</span></label>
-              <input id="email" name="email" type="email" className="input" required />
+              <label htmlFor="email">E-mail</label>
+              <input id="email" name="email" type="email" className="input" />
+            </div>
+            <div className="field">
+              <label htmlFor="id_no">ID number <span className="req">*</span></label>
+              <input id="id_no" name="id_no" className="input" required />
             </div>
             <div className="field">
               <label htmlFor="designation">Designation <span className="req">*</span></label>

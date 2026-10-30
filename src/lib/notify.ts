@@ -39,7 +39,7 @@ export async function notify(userIds: string[], notice: Notice) {
     const notifId = new Map(inserted.map((r) => [r.user_id, r.id]));
 
     // E-mail
-    const emailTargets = users.filter((u) => u.notif_email);
+    const emailTargets = users.filter((u) => u.notif_email && u.email);
     if (emailTargets.length) {
       const link = appUrl() + (notice.url ?? '/notifications');
       const html = emailHtml({

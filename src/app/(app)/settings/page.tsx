@@ -11,7 +11,7 @@ export default async function SettingsPage() {
   const user = await requireUser();
   return (
     <>
-      <PageHead title="Settings" sub={user.email} />
+      <PageHead title="Settings" sub={user.email || 'No e-mail address'} />
 
       <div className="grid-2">
         <section className="card">
@@ -43,11 +43,11 @@ export default async function SettingsPage() {
             </div>
             <div className="field">
               <label htmlFor="password">New password</label>
-              <input id="password" name="password" type="password" className="input" minLength={8} autoComplete="new-password" required />
+              <input id="password" name="password" type="password" className="input" autoComplete="new-password" required />
             </div>
             <div className="field">
               <label htmlFor="confirm">Type the new password again</label>
-              <input id="confirm" name="confirm" type="password" className="input" minLength={8} autoComplete="new-password" required />
+              <input id="confirm" name="confirm" type="password" className="input" autoComplete="new-password" required />
             </div>
             <div>
               <SubmitButton pendingText="Saving…">Change password</SubmitButton>

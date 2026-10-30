@@ -14,17 +14,18 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
     id: string;
     name: string;
     designation: string;
-    email: string;
+    email: string | null;
+    id_no: string | null;
     roles: Role[];
     active: boolean;
     has_photo: boolean;
     photo_version: number;
     has_password: boolean;
   }>(
-    `select id, name, designation, email, roles, active, (photo is not null) as has_photo, photo_version,
+    `select id, name, designation, email, id_no, roles, active, (photo is not null) as has_photo, photo_version,
             (password_hash is not null) as has_password
        from users
-      where ($1 = '' or name ilike '%' || $1 || '%' or designation ilike '%' || $1 || '%' or email ilike '%' || $1 || '%')
+      where ($1 = '' or name ilike '%' || $1 || '%' or designation ilike '%' || $1 || '%' or coalesce(email, '') ilike '%' || $1 || '%' or coalesce(id_no, '') ilike '%' || $1 || '%')
       order by active desc, name`,
     [q],
   );
@@ -51,7 +52,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
       </PageHead>
 
       <form className="searchbar" action="/employees">
-        <input className="input" name="q" defaultValue={q} placeholder="Search by name, designation or e-mail" aria-label="Search" />
+        <input className="input" name="q" defaultValue={q} placeholder="Search by name, designation, e-mail or ID" aria-label="Search" />
         <button className="btn" type="submit">
           Search
         </button>
@@ -63,6 +64,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
             <tr>
               <th>Name</th>
               <th>Designation</th>
+              <th>ID number</th>
               <th>E-mail</th>
               {manager && <th>Access</th>}
               <th />
@@ -71,7 +73,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="muted">
+                <td colSpan={6} className="muted">
                   No one found.
                 </td>
               </tr>
@@ -85,7 +87,8 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
                   </Link>
                 </td>
                 <td>{u.designation}</td>
-                <td>{u.email}</td>
+                <td>{u.id_no || '—'}</td>
+                <td>{u.email || '—'}</td>
                 {manager && (
                   <td>
                     <div className="chips">

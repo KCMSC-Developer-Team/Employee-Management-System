@@ -90,7 +90,7 @@ Each mentor is reminded once per class per day.
 - **School week:** Saturday–Thursday tabs (Friday off). Default periods: Form Class, Periods 1–3, Tiffin Hour,
   Periods 4–6 with **placeholder times** — set the real ones in *Routine editor → Edit periods and times*.
 - **Routine warnings don't block saving** (the coordinator decides), but the button says "Save with N warning(s)".
-- New accounts get an **e-mail link to set their own password** (72 hours); no passwords are ever e-mailed.
+- Employees can sign in with their e-mail or ID number. Their initial password is their ID number; they can change it in Settings. E-mail is optional for employee accounts.
 - Photos are stored in the database (small cropped JPEGs), so no extra file-storage service is needed.
 
 ## 5. Something not working? Open `/api/health`

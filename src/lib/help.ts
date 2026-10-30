@@ -135,7 +135,7 @@ const HELP: { match: (p: string) => boolean; help: Help }[] = [
       steps: [
         'Enter the name, e-mail and designation.',
         'Tick the roles this person needs. People only see their designation, not their roles.',
-        'Press “Create account”. The person receives an e-mail to set their own password.',
+        'Enter an ID number. The employee signs in with that ID and uses the same value as their initial password. E-mail is optional.',
       ],
       notes: ['Only a Developer can create a Developer or IT Technician account.'],
     },
@@ -149,7 +149,7 @@ const HELP: { match: (p: string) => boolean; help: Help }[] = [
         '1. Choose your file. The first row must contain column headings.',
         '2. Check the preview. Above each column you can see what it will be imported as. Change a match if it is wrong.',
         '3. Fix any rows marked with a problem, or leave them — they are skipped.',
-        '4. Press “Import”. Everyone gets an e-mail to set their password.',
+        '4. Press “Import”. Each employee starts with their ID number as both sign-in ID and password. Invitation e-mails are sent when an e-mail address is provided.',
       ],
     },
   },

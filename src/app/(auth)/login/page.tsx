@@ -23,8 +23,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       {done && <div className="alert alert-ok">Your password was saved. Please sign in.</div>}
       <ActionForm action={login} className="stack">
         <div className="field">
-          <label htmlFor="email">E-mail</label>
-          <input id="email" name="email" type="email" className="input" autoComplete="username" required autoFocus />
+          <label htmlFor="email">E-mail or ID number</label>
+          <input id="email" name="email" className="input" autoComplete="username" required autoFocus />
         </div>
         <div className="field">
           <label htmlFor="password">Password</label>

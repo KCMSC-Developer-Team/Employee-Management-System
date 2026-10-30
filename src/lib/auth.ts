@@ -18,14 +18,16 @@ function secret() {
 }
 
 export async function hashPassword(pw: string) {
-  return bcrypt.hash(pw, 10);
+  // bcrypt truncates after 72 bytes; pre-hash so the full password is represented.
+  return bcrypt.hash(createHash('sha256').update(pw, 'utf8').digest('base64'), 10);
 }
 
 export async function verifyPassword(pw: string, hash: string | null | undefined) {
   // Always run a comparison so response time does not reveal whether the account exists.
   const dummy = '$2a$10$CwTycUXWue0Thq9StjUM0uJ8Zq6mYpKQ5yQ1N0b3z3bYtq9m5w8nK';
-  const ok = await bcrypt.compare(pw, hash || dummy);
-  return Boolean(hash) && ok;
+  const ok = await bcrypt.compare(createHash('sha256').update(pw, 'utf8').digest('base64'), hash || dummy);
+  const legacyOk = hash ? await bcrypt.compare(pw, hash).catch(() => false) : false;
+  return Boolean(hash) && (ok || legacyOk);
 }
 
 export async function createSession(userId: string) {

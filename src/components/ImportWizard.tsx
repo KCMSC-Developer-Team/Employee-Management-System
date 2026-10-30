@@ -11,7 +11,7 @@ type FieldKey = 'name' | 'email' | 'designation' | 'roles' | 'mobile' | 'id_no' 
 
 const FIELDS: { key: FieldKey; label: string; required?: boolean; hint?: string }[] = [
   { key: 'name', label: 'Full name', required: true },
-  { key: 'email', label: 'E-mail', required: true },
+  { key: 'email', label: 'E-mail' },
   { key: 'designation', label: 'Designation', hint: 'or set one default below' },
   { key: 'roles', label: 'Role(s)', hint: 'or tick default roles below' },
   { key: 'mobile', label: 'Mobile number' },
@@ -134,9 +134,12 @@ export function ImportWizard({ assignable }: { assignable: Role[] }) {
       }
       const problems: string[] = [];
       if (!get('name')) problems.push('name is empty');
-      if (!isEmail(email)) problems.push('e-mail is not valid');
-      else if (seen.has(email)) problems.push('e-mail is repeated in the file');
-      seen.add(email);
+      if (email && !isEmail(email)) problems.push('e-mail is not valid');
+      else if (email && seen.has(`email:${email}`)) problems.push('e-mail is repeated in the file');
+      if (email) seen.add(`email:${email}`);
+      if (!get('id_no')) problems.push('ID number is empty');
+      else if (seen.has(`id:${get('id_no')}`)) problems.push('ID number is repeated in the file');
+      if (get('id_no')) seen.add(`id:${get('id_no')}`);
       if (!designation) problems.push('designation is empty');
       if (roles.length === 0) problems.push('no role');
       const row: ImportRow = {

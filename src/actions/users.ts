@@ -6,6 +6,7 @@ import { one, query } from '@/lib/db';
 import { isDeveloperEmail } from '@/lib/config';
 import { fail, go, ok, str } from '@/lib/form';
 import { sendSetPasswordLinks } from '@/lib/invite';
+import { hashPassword } from '@/lib/auth';
 import { assignableRoles, cleanRoles, isDeveloper } from '@/lib/roles';
 import type { FormState, Role } from '@/lib/types';
 import { isEmail } from '@/lib/utils';
@@ -29,41 +30,39 @@ export async function createUser(_prev: FormState, fd: FormData): Promise<FormSt
   const actor = await requireRole('it');
   const name = str(fd, 'name', 120);
   const email = str(fd, 'email', 200).toLowerCase();
+  const idNo = str(fd, 'id_no', 100);
   const designation = str(fd, 'designation', 120);
   const mobile = str(fd, 'mobile', 40);
   const roles = cleanRoles(fd.getAll('roles').map(String), actor.roles);
   if (isDeveloperEmail(email) && !roles.includes('developer')) roles.push('developer');
 
   if (!name) return fail('Enter the full name.');
-  if (!isEmail(email)) return fail('Enter a valid e-mail address.');
+  if (email && !isEmail(email)) return fail('Enter a valid e-mail address.');
+  if (!idNo) return fail('Enter the employee ID number.');
   if (!designation) return fail('Enter the designation.');
   if (roles.length === 0) return fail('Tick at least one role.');
 
-  const exists = await one('select 1 from users where lower(email) = $1', [email]);
-  if (exists) return fail('An account with this e-mail already exists.');
+  const exists = await one('select 1 from users where id_no = $1 or ($2 <> \'\' and lower(email) = $2)', [idNo, email]);
+  if (exists) return fail('An account with this e-mail or ID number already exists.');
 
   const created = await one<{ id: string }>(
-    'insert into users (email, name, designation, roles) values ($1,$2,$3,$4) returning id',
-    [email, name, designation, roles],
+    'insert into users (email, id_no, name, designation, roles, password_hash) values ($1,$2,$3,$4,$5,$6) returning id',
+    [email || null, idNo, name, designation, roles, await hashPassword(idNo)],
   );
   if (!created) return fail('Could not create the account.');
   await query('insert into profiles (user_id, data) values ($1, $2::jsonb)', [
     created.id,
-    JSON.stringify(mobile ? { mobile } : {}),
+    JSON.stringify({ ...(mobile ? { mobile } : {}), id_no: idNo }),
   ]);
 
-  const r = await sendSetPasswordLinks([{ id: created.id, email, name }], 'invite');
   revalidatePath('/employees');
-  if (r.ok) return ok(`Account created for ${name}. An e-mail was sent to ${email} so they can set a password.`);
-  return ok(
-    `Account created for ${name}, but the e-mail could not be sent (${r.error}). Give them this link yourself: ${r.links[0].link}`,
-  );
+  return ok(`Account created for ${name}. They can sign in with ID ${idNo} and use the same ID as their initial password.`);
 }
 
 /* ── bulk import ────────────────────────────────────────── */
 export type ImportRow = {
   name: string;
-  email: string;
+  email: string | null;
   designation: string;
   roles: string[];
   mobile?: string;
@@ -94,29 +93,36 @@ export async function importUsers(rows: ImportRow[]): Promise<ImportResult> {
 
   const skipped: ImportResult['skipped'] = [];
   const emails = rows.map((r) => String(r.email ?? '').trim().toLowerCase());
-  const existing = await query<{ e: string }>('select lower(email) as e from users where lower(email) = any($1::text[])', [
-    emails,
-  ]);
+  const ids = rows.map((r) => String(r.id_no ?? '').trim());
+  const existing = await query<{ e: string | null; n: string | null }>(
+    'select lower(email) as e, id_no as n from users where lower(email) = any($1::text[]) or id_no = any($2::text[])',
+    [emails.filter(Boolean), ids.filter(Boolean)],
+  );
   const taken = new Set(existing.map((r) => r.e));
+  const takenIds = new Set(existing.map((r) => r.n));
   const seen = new Set<string>();
   const createdUsers: { id: string; email: string; name: string }[] = [];
+  let createdCount = 0;
 
   for (let i = 0; i < rows.length; i++) {
     const line = i + 2; // spreadsheet line (row 1 = headings)
     const r = rows[i];
     const email = emails[i];
+    const idNo = ids[i];
     const name = String(r.name ?? '').trim().slice(0, 120);
     const designation = String(r.designation ?? '').trim().slice(0, 120);
     const roles = cleanRoles((r.roles ?? []).map(String), actor.roles);
     if (isDeveloperEmail(email) && !roles.includes('developer')) roles.push('developer');
 
     if (!name) { skipped.push({ line, email, reason: 'Name is empty' }); continue; }
-    if (!isEmail(email)) { skipped.push({ line, email, reason: 'E-mail is not valid' }); continue; }
+    if (email && !isEmail(email)) { skipped.push({ line, email, reason: 'E-mail is not valid' }); continue; }
+    if (!idNo) { skipped.push({ line, email, reason: 'ID number is empty' }); continue; }
     if (!designation) { skipped.push({ line, email, reason: 'Designation is empty' }); continue; }
     if (roles.length === 0) { skipped.push({ line, email, reason: 'No role you are allowed to assign' }); continue; }
-    if (taken.has(email)) { skipped.push({ line, email, reason: 'Account already exists' }); continue; }
-    if (seen.has(email)) { skipped.push({ line, email, reason: 'Repeated in the file' }); continue; }
-    seen.add(email);
+    if ((email && taken.has(email)) || takenIds.has(idNo)) { skipped.push({ line, email, reason: 'Account already exists' }); continue; }
+    if ((email && seen.has(`email:${email}`)) || seen.has(`id:${idNo}`)) { skipped.push({ line, email, reason: 'Repeated in the file' }); continue; }
+    if (email) seen.add(`email:${email}`);
+    seen.add(`id:${idNo}`);
 
     const data: Record<string, string> = {};
     for (const k of ['mobile', 'id_no', 'position', 'dept', 'date_of_joining', 'supervisor'] as const) {
@@ -126,12 +132,14 @@ export async function importUsers(rows: ImportRow[]): Promise<ImportResult> {
 
     try {
       const u = await one<{ id: string }>(
-        'insert into users (email, name, designation, roles) values ($1,$2,$3,$4) returning id',
-        [email, name, designation, roles],
+        'insert into users (email, id_no, name, designation, roles, password_hash) values ($1,$2,$3,$4,$5,$6) returning id',
+        [email || null, idNo, name, designation, roles, await hashPassword(idNo)],
       );
       if (!u) throw new Error('insert failed');
       await query('insert into profiles (user_id, data) values ($1, $2::jsonb)', [u.id, JSON.stringify(data)]);
-      createdUsers.push({ id: u.id, email, name });
+      await query('update profiles set data = data || $2::jsonb where user_id = $1', [u.id, JSON.stringify({ id_no: idNo })]);
+      createdCount++;
+      if (email) createdUsers.push({ id: u.id, email, name });
     } catch {
       skipped.push({ line, email, reason: 'Could not be saved' });
     }
@@ -148,9 +156,9 @@ export async function importUsers(rows: ImportRow[]): Promise<ImportResult> {
   }
   revalidatePath('/employees');
   return {
-    ok: createdUsers.length > 0,
-    message: `${createdUsers.length} account(s) created, ${skipped.length} skipped.`,
-    created: createdUsers.length,
+    ok: createdCount > 0,
+    message: `${createdCount} account(s) created, ${skipped.length} skipped.`,
+    created: createdCount,
     skipped,
     emailError,
     links,
@@ -201,6 +209,7 @@ export async function sendInvite(id: string, _prev: FormState, _fd: FormData): P
   if (target.roles.includes('developer') && !isDeveloper(actor.roles)) return fail('Only a Developer can do this.');
   const kind = target.password_hash ? 'reset' : 'invite';
   const r = await sendSetPasswordLinks([target], kind);
+  if (!target.email) return fail('This account has no e-mail address. The employee can sign in with their ID number and current password.');
   if (r.ok) return ok(`A ${kind === 'invite' ? 'set-password' : 'reset'} link was e-mailed to ${target.email}.`);
   return ok(`E-mail could not be sent (${r.error}). Give them this link yourself: ${r.links[0].link}`);
 }

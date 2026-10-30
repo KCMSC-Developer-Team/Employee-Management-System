@@ -3,7 +3,8 @@
 
 CREATE TABLE IF NOT EXISTS users (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email         text NOT NULL,
+  email         text,
+  id_no         text,
   name          text NOT NULL,
   designation   text NOT NULL DEFAULT 'Employee',
   roles         text[] NOT NULL DEFAULT '{}',
@@ -17,13 +18,20 @@ CREATE TABLE IF NOT EXISTS users (
   CONSTRAINT users_notif_one_on CHECK (notif_push OR notif_email)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_idx ON users (lower(email));
+ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS id_no text;
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_idx ON users (lower(email)) WHERE email IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS users_id_no_idx ON users (id_no) WHERE id_no IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS profiles (
   user_id    uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   data       jsonb NOT NULL DEFAULT '{}'::jsonb,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+UPDATE users u SET id_no = p.data->>'id_no'
+  FROM profiles p
+ WHERE u.id = p.user_id AND u.id_no IS NULL AND nullif(p.data->>'id_no', '') IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS profile_edits (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),

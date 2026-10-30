@@ -4,7 +4,7 @@ export type Role = 'developer' | 'it' | 'authority' | 'coordinator' | 'mentor';
 
 export type SessionUser = {
   id: string;
-  email: string;
+  email: string | null;
   name: string;
   designation: string;
   roles: Role[];
