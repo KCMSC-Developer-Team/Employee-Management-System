@@ -93,7 +93,15 @@ Each mentor is reminded once per class per day.
 - New accounts get an **e-mail link to set their own password** (72 hours); no passwords are ever e-mailed.
 - Photos are stored in the database (small cropped JPEGs), so no extra file-storage service is needed.
 
-## 5. First deploy checklist
+## 5. Something not working? Open `/api/health`
+
+`https://YOUR-SITE/api/health` shows, without revealing any secret: which environment variables are set
+(`APP_URL` and `EMAIL_FROM` are shown in full), whether each database table exists, and whether the Developer
+account exists and has a password. Most problems are visible there — a wrong `APP_URL` means e-mail links point at
+the wrong site; a missing `AUTH_SECRET` means sign-in fails.
+After changing any environment variable in Vercel you must **Redeploy** for it to take effect.
+
+## 6. First deploy checklist
 
 - [ ] Build log shows `[migrate] done`; `/setup` e-mails you the password link
 - [ ] You can sign in; **Settings → Enable on this browser** works (needs HTTPS and the VAPID keys)
@@ -102,7 +110,7 @@ Each mentor is reminded once per class per day.
 - [ ] `next.config.mjs` currently sets `ignoreBuildErrors: true` so a stray type error cannot block your first
       deploy. Once everything works, set it to `false` and run `npx tsc --noEmit` to clean up any type warnings.
 
-## 6. Project layout
+## 7. Project layout
 
 ```
 db/schema.sql          database tables (idempotent)

@@ -1,4 +1,4 @@
-export type FormState = { ok: boolean; message: string } | null;
+export type FormState = { ok: boolean; message: string; redirect?: string } | null;
 
 export type Role = 'developer' | 'it' | 'authority' | 'coordinator' | 'mentor';
 

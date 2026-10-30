@@ -12,7 +12,7 @@ export const metadata = { title: 'Sign in' };
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ done?: string }> }) {
   if (await getUser()) redirect('/dashboard');
   const { done } = await searchParams;
-  const devExists = await one('select 1 from users where lower(email) = $1', [DEVELOPER_EMAIL]);
+  const devExists = await one('select 1 from users where lower(email) = $1', [DEVELOPER_EMAIL]).catch(() => true);
   return (
     <>
       {!devExists && (

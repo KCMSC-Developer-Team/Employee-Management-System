@@ -1,11 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { requireRole } from '@/lib/auth';
 import { one, query } from '@/lib/db';
 import { isDeveloperEmail } from '@/lib/config';
-import { fail, ok, str } from '@/lib/form';
+import { fail, go, ok, str } from '@/lib/form';
 import { sendSetPasswordLinks } from '@/lib/invite';
 import { assignableRoles, cleanRoles, isDeveloper } from '@/lib/roles';
 import type { FormState, Role } from '@/lib/types';
@@ -216,5 +215,5 @@ export async function deleteUser(id: string, _prev: FormState, _fd: FormData): P
   }
   await query('delete from users where id = $1', [id]);
   revalidatePath('/employees');
-  redirect('/employees');
+  return go('/employees');
 }

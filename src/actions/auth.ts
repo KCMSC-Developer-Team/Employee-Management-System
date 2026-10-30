@@ -1,10 +1,10 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { consumeToken, createSession, destroySession, hashPassword, requireUser, verifyPassword } from '@/lib/auth';
+import { consumeToken, createSession, destroySession, hashPassword, peekToken, requireUser, verifyPassword } from '@/lib/auth';
 import { one, query } from '@/lib/db';
 import { DEVELOPER_EMAIL } from '@/lib/config';
-import { fail, ok, str } from '@/lib/form';
+import { fail, go, ok, str } from '@/lib/form';
 import { sendSetPasswordLinks } from '@/lib/invite';
 import type { FormState } from '@/lib/types';
 
@@ -21,7 +21,7 @@ export async function login(_prev: FormState, fd: FormData): Promise<FormState> 
   if (!user || !good) return fail('E-mail or password is not correct.');
 
   await createSession(user.id);
-  redirect('/dashboard');
+  return go('/dashboard');
 }
 
 /**
@@ -72,10 +72,11 @@ export async function resetPassword(_prev: FormState, fd: FormData): Promise<For
   const confirm = String(fd.get('confirm') ?? '');
   if (pw.length < 8) return fail('Password must be at least 8 characters.');
   if (pw !== confirm) return fail('The two passwords do not match.');
-  const userId = await consumeToken(token);
+  const userId = await peekToken(token);
   if (!userId) return fail('This link has expired or was already used. Please ask for a new one.');
   await query('update users set password_hash = $2 where id = $1', [userId, await hashPassword(pw)]);
-  redirect('/login?done=1');
+  await consumeToken(token); // only used up once the new password is safely saved
+  return go('/login?done=1');
 }
 
 export async function changePassword(_prev: FormState, fd: FormData): Promise<FormState> {

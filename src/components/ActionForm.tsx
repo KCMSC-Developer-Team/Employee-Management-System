@@ -28,7 +28,8 @@ export function SubmitButton({
 
 /**
  * A form that calls a server action and shows its message underneath.
- * Unlike a plain <form action>, it keeps what the person typed when there is an error.
+ * Unlike a plain <form action>, it keeps what the person typed when there is an error,
+ * and a server failure shows a message here instead of crashing the whole page.
  */
 export function ActionForm({
   action,
@@ -53,9 +54,21 @@ export function ActionForm({
     const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
     const fd = new FormData(form, submitter as any);
     start(async () => {
-      const result = await action(null, fd);
-      setState(result);
-      if (result?.ok && resetOnSuccess) form.reset();
+      try {
+        const result = await action(null, fd);
+        if (result?.redirect) {
+          window.location.assign(result.redirect); // full load, so the new sign-in cookie is picked up
+          return;
+        }
+        setState(result);
+        if (result?.ok && resetOnSuccess) form.reset();
+      } catch {
+        setState({
+          ok: false,
+          message:
+            'Something went wrong on the server. Please try again. If it keeps happening, open /api/health on this site and send the result to the developer.',
+        });
+      }
     });
   }
 

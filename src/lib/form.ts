@@ -1,6 +1,7 @@
 import type { FormState } from './types';
 
 export const ok = (message: string): FormState => ({ ok: true, message });
+export const go = (to: string): FormState => ({ ok: true, message: '', redirect: to });
 export const fail = (message: string): FormState => ({ ok: false, message });
 export const str = (fd: FormData, key: string, max = 500): string =>
   String(fd.get(key) ?? '')
