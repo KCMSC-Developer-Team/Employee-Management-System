@@ -3,7 +3,7 @@ import { PageHead } from '@/components/ui';
 import { requireUser } from '@/lib/auth';
 import { one, query } from '@/lib/db';
 import { can, ROLE_LABELS } from '@/lib/roles';
-import { DAY_NAMES, fmtRange, SECTION_LABELS, toMin } from '@/lib/routine';
+import { DAY_NAMES, DAY_ORDER, fmtRange, SECTION_LABELS, toMin } from '@/lib/routine';
 import type { Section } from '@/lib/types';
 import { dhakaNow, fmtDate } from '@/lib/utils';
 
@@ -23,7 +23,7 @@ export default async function Dashboard() {
       ? one<{ n: number }>(`select count(*)::int as n from profile_edits where status='pending' and user_id <> $1`, [user.id])
       : Promise.resolve(null),
     can(r, 'it', 'authority') ? one<{ n: number }>('select count(*)::int as n from users where active = true') : Promise.resolve(null),
-    isMentor
+    isMentor && DAY_ORDER.includes(now.day)
       ? query<Row>(
           `select e.section, e.class_name, p.label, p.kind, p.start_time, p.end_time
              from routine_entries e join periods p on p.id = e.period_id
@@ -55,16 +55,16 @@ export default async function Dashboard() {
       <div className="grid-3 dashboard-stats">
         {isMentor && (
           <div className="card stat">
-            <div className="stat-label">{ongoing ? 'Class now' : 'Your next class today'}</div>
-            {next ? (
+            <div className="stat-label">Classes on your schedule today</div>
+            {today.length ? (
               <>
-                <div className="stat-value">{next.class_name}</div>
+                <div className="stat-value">{today.length}</div>
                 <div className="muted">
-                  {next.kind === 'form' ? 'Form class' : next.label} · {fmtRange(next)}
+                  {ongoing ? `In progress: ${ongoing.class_name} · ${fmtRange(ongoing)}` : next ? `Next: ${next.class_name} · ${fmtRange(next)}` : `Last class ended at ${fmtRange(today[today.length - 1])}`}
                 </div>
               </>
             ) : (
-              <div className="muted">No more classes today.</div>
+              <div className="muted">No classes scheduled today.</div>
             )}
           </div>
         )}

@@ -5,7 +5,7 @@ import { requireRole } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { fail, ok, str } from '@/lib/form';
 import { notify } from '@/lib/notify';
-import { DAY_NAMES, SECTION_LABELS, toMin } from '@/lib/routine';
+import { DAY_NAMES, DAY_ORDER, SECTION_LABELS, toMin } from '@/lib/routine';
 import type { FormState, Section } from '@/lib/types';
 
 const isSection = (s: string): s is Section => s === 'junior' || s === 'senior';
@@ -16,7 +16,7 @@ export type SaveCell = { mentorId: string; periodId: string; cls: string };
 /** Replaces the whole routine of one section on one day, then tells every mentor whose routine changed. */
 export async function saveDay(section: string, day: number, cells: SaveCell[]): Promise<FormState> {
   await requireRole('coordinator');
-  if (!isSection(section) || !Number.isInteger(day) || day < 0 || day > 6) return fail('Invalid section or day.');
+  if (!isSection(section) || !Number.isInteger(day) || !DAY_ORDER.includes(day)) return fail('Invalid section or day.');
 
   const periods = await query<{ id: string }>('select id from periods where section = $1', [section]);
   const mentors = await query<{ id: string }>(`select id from users where active = true and wing = $1 and 'mentor' = any(roles)`, [section]);

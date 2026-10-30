@@ -5,8 +5,8 @@ export const SECTION_LABELS: Record<Section, string> = {
   senior: 'Senior Section',
 };
 
-/** Saturday → Thursday (Friday is the weekly holiday). 0 = Sunday … 6 = Saturday. */
-export const DAY_ORDER = [6, 0, 1, 2, 3, 4];
+/** Sunday → Thursday (Friday and Saturday are weekly holidays). 0 = Sunday … 6 = Saturday. */
+export const DAY_ORDER = [0, 1, 2, 3, 4];
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export const toMin = (t: string) => {

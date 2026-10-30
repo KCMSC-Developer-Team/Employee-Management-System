@@ -108,12 +108,17 @@ CREATE INDEX IF NOT EXISTS periods_section_idx ON periods (section, position);
 CREATE TABLE IF NOT EXISTS routine_entries (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   section    text NOT NULL CHECK (section IN ('junior','senior')),
-  day        integer NOT NULL CHECK (day BETWEEN 0 AND 6),
+  day        integer NOT NULL CHECK (day BETWEEN 0 AND 4),
   mentor_id  uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   period_id  uuid NOT NULL REFERENCES periods(id) ON DELETE CASCADE,
   class_name text NOT NULL,
   UNIQUE (section, day, mentor_id, period_id)
 );
+
+-- Friday (5) and Saturday (6) are closed; remove old assignments and enforce open days.
+DELETE FROM routine_entries WHERE day IN (5, 6);
+ALTER TABLE routine_entries DROP CONSTRAINT IF EXISTS routine_entries_day_check;
+ALTER TABLE routine_entries ADD CONSTRAINT routine_entries_day_check CHECK (day BETWEEN 0 AND 4);
 
 CREATE INDEX IF NOT EXISTS routine_entries_day_idx ON routine_entries (day, section);
 
