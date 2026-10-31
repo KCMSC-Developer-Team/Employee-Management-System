@@ -24,7 +24,8 @@ async function currentData(userId: string): Promise<Record<string, string>> {
 
 const cap = (key: string) => (FIELD_BY_KEY[key]?.type === 'textarea' ? 1000 : 200);
 
-/* Employee edits own profile → waits for approval (Developers save directly). */
+/* Employee edits own profile → waits for approval (Developers save directly).
+   Designation travels in the same request and is written to the account once approved. */
 export async function submitProfile(_prev: FormState, fd: FormData): Promise<FormState> {
   const user = await requireUser();
   const current = await currentData(user.id);
@@ -35,10 +36,19 @@ export async function submitProfile(_prev: FormState, fd: FormData): Promise<For
     const value = str(fd, key, cap(key));
     if (value !== (current[key] ?? '')) changed[key] = value;
   }
+
+  if (fd.has('designation')) {
+    const designation = str(fd, 'designation', 120);
+    if (!designation) return fail('Enter your designation.');
+    if (designation !== user.designation) changed.designation = designation;
+  }
   if (Object.keys(changed).length === 0) return fail('You have not changed anything.');
 
   if (isDeveloper(user.roles)) {
-    await mergeProfile(user.id, changed);
+    const { designation, ...profileChanges } = changed;
+    if (designation) await query('update users set designation = $2 where id = $1', [user.id, designation]);
+    if (Object.keys(profileChanges).length) await mergeProfile(user.id, profileChanges);
+    revalidatePath('/', 'layout');
     revalidatePath('/profile');
     return ok('Saved. (Developer changes need no approval.)');
   }
@@ -72,8 +82,12 @@ export async function reviewEdit(_prev: FormState, fd: FormData): Promise<FormSt
   if (edit.user_id === actor.id && !isDeveloper(actor.roles)) return fail('You cannot approve your own changes.');
 
   if (decision === 'approve') {
-    const safe = Object.fromEntries(Object.entries(edit.data).filter(([k]) => EMPLOYEE_KEYS.includes(k)));
-    await mergeProfile(edit.user_id, safe);
+    const { designation, ...rest } = edit.data;
+    if (designation) {
+      await query('update users set designation = $2 where id = $1', [edit.user_id, String(designation).slice(0, 120)]);
+    }
+    const safe = Object.fromEntries(Object.entries(rest).filter(([k]) => EMPLOYEE_KEYS.includes(k)));
+    if (Object.keys(safe).length) await mergeProfile(edit.user_id, safe);
   }
   await query(
     `update profile_edits set status = $2, reviewed_by = $3, review_note = $4, reviewed_at = now() where id = $1`,
@@ -86,6 +100,7 @@ export async function reviewEdit(_prev: FormState, fd: FormData): Promise<FormSt
   });
   revalidatePath('/approvals');
   revalidatePath('/profile');
+  revalidatePath('/', 'layout');
   return ok(decision === 'approve' ? 'Approved.' : 'Rejected.');
 }
 

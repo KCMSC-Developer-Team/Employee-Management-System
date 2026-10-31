@@ -142,12 +142,12 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
               </div>
               <div className="field">
                 <label htmlFor="wing">Wing</label>
-                <select id="wing" name="wing" className="input" defaultValue={target.wing || ''} required>
-                  <option value="" disabled>Choose a wing</option>
+                <select id="wing" name="wing" className="input" defaultValue={target.wing || ''}>
+                  <option value="">Not assigned yet</option>
                   <option value="junior">Junior</option>
                   <option value="senior">Senior</option>
                 </select>
-                {!target.wing && <p className="muted small">Assign a wing to include this employee in the correct routine editor.</p>}
+                {!target.wing && <p className="muted small">Optional. Assign a wing to include this employee in a routine editor.</p>}
               </div>
               <div className="field">
                 <label>Roles</label>

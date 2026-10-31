@@ -63,8 +63,8 @@ export default async function ApprovalsPage() {
                   <tbody>
                     {Object.entries(e.data).map(([k, v]) => (
                       <tr key={k}>
-                        <td>{fieldLabel(k)}</td>
-                        <td className="muted">{show(k, e.current?.[k])}</td>
+                        <td>{k === 'designation' ? 'Designation' : fieldLabel(k)}</td>
+                        <td className="muted">{show(k, k === 'designation' ? e.designation : e.current?.[k])}</td>
                         <td>
                           <strong>{show(k, v)}</strong>
                         </td>

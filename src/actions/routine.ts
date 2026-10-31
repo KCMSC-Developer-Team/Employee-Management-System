@@ -18,9 +18,9 @@ export async function saveDay(section: string, day: number, cells: SaveCell[]): 
   await requireRole('coordinator');
   if (!isSection(section) || !Number.isInteger(day) || !DAY_ORDER.includes(day)) return fail('Invalid section or day.');
 
-  const periods = await query<{ id: string }>('select id from periods where section = $1', [section]);
+  const periods = await query<{ id: string; kind: string }>('select id, kind from periods where section = $1', [section]);
   const mentors = await query<{ id: string }>(`select id from users where active = true and wing = $1 and 'mentor' = any(roles)`, [section]);
-  const validPeriod = new Set(periods.map((p) => p.id));
+  const validPeriod = new Set(periods.filter((p) => p.kind !== 'tiffin').map((p) => p.id)); // tiffin is a break, never a class
   const validMentor = new Set(mentors.map((m) => m.id));
 
   const next = new Map<string, { m: string; p: string; c: string }>();

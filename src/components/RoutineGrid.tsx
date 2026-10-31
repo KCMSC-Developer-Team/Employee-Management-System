@@ -25,9 +25,18 @@ export function RoutineGrid({
   entries: Entry[];
   suggestions: string[];
 }) {
+  // Tiffin periods are breaks: no class is ever entered or saved for them.
+  const tiffinIds = useMemo(
+    () => new Set([...periods, ...otherPeriods].filter((p) => p.kind === 'tiffin').map((p) => p.id)),
+    [periods, otherPeriods],
+  );
+
   const [cells, setCells] = useState<Record<string, string>>(() => {
     const m: Record<string, string> = {};
-    for (const e of entries) m[cellKey(e.section, e.mentor_id, e.period_id)] = e.class_name;
+    for (const e of entries) {
+      if (tiffinIds.has(e.period_id)) continue;
+      m[cellKey(e.section, e.mentor_id, e.period_id)] = e.class_name;
+    }
     return m;
   });
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -73,7 +82,8 @@ export function RoutineGrid({
       .map(([k, cls]) => {
         const [, mentorId, periodId] = k.split(':');
         return { mentorId, periodId, cls };
-      });
+      })
+      .filter((c) => !tiffinIds.has(c.periodId));
     start(async () => {
       const r = await saveDay(section, day, payload);
       setMsg({ ok: r?.ok ?? false, text: r?.message ?? 'Saved.' });
@@ -123,11 +133,14 @@ export function RoutineGrid({
                   <div className="muted small">{m.designation}</div>
                 </th>
                 {periods.map((p) => {
+                  if (p.kind === 'tiffin') {
+                    return <td key={p.id} className="tiffin tiffin-blank" aria-label={`${m.name}, ${p.label} (break)`} />;
+                  }
                   const key = cellKey(section, m.id, p.id);
                   const isBad = bad.has(key);
                   const tone = isBad ? null : classTone(cells[key]);
                   return (
-                    <td key={p.id} className={p.kind === 'tiffin' ? 'tiffin' : ''}>
+                    <td key={p.id}>
                       <input
                         className={`cell-input ${isBad ? 'cell-bad' : ''} ${tone !== null ? `tone-${tone}` : ''}`}
                         list="class-suggestions"

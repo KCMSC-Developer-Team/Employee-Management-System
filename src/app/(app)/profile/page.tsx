@@ -24,7 +24,7 @@ export default async function ProfilePage() {
   ]);
   const data = profile?.data ?? {};
   // show what the person last submitted while it is waiting, so they do not think it was lost
-  const shown = { ...data, ...(pending?.data ?? {}) };
+  const shown: Record<string, string> = { ...data, ...(pending?.data ?? {}) };
 
   return (
     <>
@@ -53,6 +53,16 @@ export default async function ProfilePage() {
       )}
 
       <ActionForm action={submitProfile} className="stack" >
+        <section className="card profile-section">
+          <header className="profile-section-header"><p className="eyebrow">Your post</p><h2>Designation</h2></header>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="designation">Designation</label>
+              <input id="designation" name="designation" className="input" maxLength={120} required defaultValue={shown.designation ?? user.designation} />
+            </div>
+          </div>
+          <p className="muted small" style={{ margin: '0 20px 20px' }}>A change to your designation needs approval from a Developer, Authority or IT Technician.</p>
+        </section>
         {GROUPS.map((g) => {
           const editable = g.fields.filter((f) => !f.admin);
           const managed = g.fields.filter((f) => f.admin);

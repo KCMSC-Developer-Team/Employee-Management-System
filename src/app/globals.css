@@ -184,6 +184,7 @@ textarea.input { resize: vertical; min-height: 88px; }
 .seg a.active { background: var(--color-blue); color: #fff; }
 
 /* ── Routine grid ───────────────────────── */
+.routine-table td.tiffin-blank { background: var(--color-gold-tint); }
 .routine-table th, .routine-table td { padding: 6px; min-width: 120px; }
 .routine-table thead th { text-align: center; }
 .routine-table th.sticky-col { position: sticky; left: 0; background: #fff; z-index: 1; min-width: 180px; border-right: 1px solid var(--color-border); }

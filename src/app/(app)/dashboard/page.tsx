@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { PageHead } from '@/components/ui';
 import { requireUser } from '@/lib/auth';
 import { one, query } from '@/lib/db';
-import { can, ROLE_LABELS } from '@/lib/roles';
+import { can } from '@/lib/roles';
 import { DAY_NAMES, DAY_ORDER, fmtRange, SECTION_LABELS, toMin } from '@/lib/routine';
 import type { Section } from '@/lib/types';
 import { dhakaNow, fmtDate } from '@/lib/utils';
@@ -44,11 +44,10 @@ export default async function Dashboard() {
   const ongoing = next && toMin(next.start_time) <= now.minutes;
   const canManagePeople = can(r, 'it');
   const canCoordinate = can(r, 'coordinator');
-  const roleText = r.map((role) => ROLE_LABELS[role]).join(', ');
 
   return (
     <>
-      <PageHead title={`Hello, ${user.name.split(' ')[0]}`} sub={`${user.designation} · ${roleText} · ${DAY_NAMES[now.day]}, ${fmtDate(now.date)}`} />
+      <PageHead title={`Hello, ${user.name.split(' ')[0]}`} sub={`${user.designation} · ${DAY_NAMES[now.day]}, ${fmtDate(now.date)}`} />
 
       <div className="dashboard-overview">
         <div className="dashboard-primary">

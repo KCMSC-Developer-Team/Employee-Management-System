@@ -40,7 +40,7 @@ export async function createUser(_prev: FormState, fd: FormData): Promise<FormSt
   if (!name) return fail('Enter the full name.');
   if (email && !isEmail(email)) return fail('Enter a valid e-mail address.');
   if (!idNo) return fail('Enter the employee ID number.');
-  if (wing !== 'junior' && wing !== 'senior') return fail('Choose the employee’s wing.');
+  if (wing && wing !== 'junior' && wing !== 'senior') return fail('Choose Junior or Senior, or leave the wing blank.');
   if (!designation) return fail('Enter the designation.');
   if (roles.length === 0) return fail('Tick at least one role.');
 
@@ -49,12 +49,12 @@ export async function createUser(_prev: FormState, fd: FormData): Promise<FormSt
 
   const created = await one<{ id: string }>(
     'insert into users (email, id_no, wing, name, designation, roles, password_hash) values ($1,$2,$3,$4,$5,$6,$7) returning id',
-    [email || null, idNo, wing, name, designation, roles, await hashPassword(idNo)],
+    [email || null, idNo, wing || null, name, designation, roles, await hashPassword(idNo)],
   );
   if (!created) return fail('Could not create the account.');
   await query('insert into profiles (user_id, data) values ($1, $2::jsonb)', [
     created.id,
-    JSON.stringify({ ...(mobile ? { mobile } : {}), id_no: idNo, wing }),
+    JSON.stringify({ ...(mobile ? { mobile } : {}), id_no: idNo, ...(wing ? { wing } : {}) }),
   ]);
 
   revalidatePath('/employees');
@@ -183,7 +183,7 @@ export async function updateUser(id: string, _prev: FormState, fd: FormData): Pr
   const designation = str(fd, 'designation', 120);
   const wing = str(fd, 'wing', 20).toLowerCase();
   if (!name || !designation) return fail('Name and designation are required.');
-  if (wing !== 'junior' && wing !== 'senior') return fail('Choose the employee’s wing.');
+  if (wing && wing !== 'junior' && wing !== 'senior') return fail('Choose Junior or Senior, or leave the wing blank.');
 
   const mine = assignableRoles(actor.roles) as string[];
   const kept = target.roles.filter((r) => !mine.includes(r)); // roles this actor cannot touch stay as they are
@@ -203,7 +203,7 @@ export async function updateUser(id: string, _prev: FormState, fd: FormData): Pr
     designation,
     roles,
     active,
-    wing,
+    wing || null,
   ]);
   revalidatePath(`/employees/${id}`);
   revalidatePath('/employees');
