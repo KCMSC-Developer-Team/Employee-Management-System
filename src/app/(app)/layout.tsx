@@ -28,6 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (can(r, 'it', 'authority')) items.push({ href: '/approvals', label: 'Approvals', badge: pending?.n || 0, group: 'People' });
   if (can(r, 'it')) items.push({ href: '/employees/new', label: 'Add employee', group: 'People' });
   if (can(r, 'it')) items.push({ href: '/employees/import', label: 'Import from spreadsheet', group: 'People' });
+  if (r.includes('developer')) items.push({ href: '/employees/setup-emails', label: 'Set-up e-mails', group: 'People' });
   items.push({ href: '/objections', label: 'My objections', group: 'Account' });
   items.push({ href: '/profile', label: 'My profile', group: 'Account' });
   items.push({ href: '/settings', label: 'Settings', group: 'Account' });

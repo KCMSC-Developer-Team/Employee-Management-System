@@ -148,3 +148,20 @@ CREATE TABLE IF NOT EXISTS reminder_log (
   on_date   date NOT NULL,
   PRIMARY KEY (mentor_id, period_id, on_date)
 );
+
+-- Observations used to be profile fields. They are now objections (visible to the Developer,
+-- Authority and the employee, and printed with the profile). Copy any left, then remove the old keys.
+-- Safe to run on every deploy: once the keys are removed, nothing is copied again.
+INSERT INTO objections (user_id, author_id, subject, body)
+SELECT p.user_id,
+       NULL,
+       COALESCE(NULLIF(p.data->>('obs' || n || '_subject'), ''), 'Observation'),
+       CASE WHEN NULLIF(p.data->>('obs' || n || '_date'), '') IS NULL THEN '' ELSE 'Date: ' || (p.data->>('obs' || n || '_date')) || chr(10) || chr(10) END
+         || COALESCE(p.data->>('obs' || n || '_desc'), '')
+  FROM profiles p CROSS JOIN generate_series(1, 4) AS n
+ WHERE NULLIF(p.data->>('obs' || n || '_subject'), '') IS NOT NULL
+    OR NULLIF(p.data->>('obs' || n || '_desc'), '') IS NOT NULL;
+
+UPDATE profiles
+   SET data = data - ARRAY['obs1_date','obs1_subject','obs1_desc','obs2_date','obs2_subject','obs2_desc','obs3_date','obs3_subject','obs3_desc','obs4_date','obs4_subject','obs4_desc']::text[]
+ WHERE (data - ARRAY['obs1_date','obs1_subject','obs1_desc','obs2_date','obs2_subject','obs2_desc','obs3_date','obs3_subject','obs3_desc','obs4_date','obs4_subject','obs4_desc']::text[]) <> data;

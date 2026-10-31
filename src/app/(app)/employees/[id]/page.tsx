@@ -5,7 +5,7 @@ import { saveAdminFields } from '@/actions/profile';
 import { deleteUser, sendInvite, updateUser } from '@/actions/users';
 import { ActionForm, SubmitButton } from '@/components/ActionForm';
 import { PrintButton } from '@/components/PrintButton';
-import { Avatar, FieldInput, PageHead, ProfileSheet } from '@/components/ui';
+import { Avatar, FieldInput, ObjectionRecords, PageHead, ProfileSheet, type ObjectionRecord } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { one, query } from '@/lib/db';
 import { ADMIN_KEYS, FIELD_BY_KEY } from '@/lib/profile-fields';
@@ -47,14 +47,14 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
   const profile = await one<{ data: Record<string, string> }>('select data from profiles where user_id = $1', [id]);
   const data = profile?.data ?? {};
 
-  // Developer sees every objection; an Authority sees only the ones they wrote themselves.
+  // Developer and Authority see every objection on this employee.
   const objections = canObject
-    ? await query<{ id: string; subject: string; body: string; created_at: string; read_at: string | null; author: string | null }>(
+    ? await query<ObjectionRecord & { read_at: string | null }>(
         `select o.id, o.subject, o.body, o.created_at, o.read_at, a.name as author
            from objections o left join users a on a.id = o.author_id
-          where o.user_id = $1 and ($2::boolean or o.author_id = $3)
+          where o.user_id = $1
           order by o.created_at desc`,
-        [id, isDeveloper(actor.roles), actor.id],
+        [id],
       )
     : [];
 
@@ -103,6 +103,9 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
               </div>
             }
           />
+          <div className="print-only">
+            <ObjectionRecords items={objections} title="Objections" />
+          </div>
           <dl className="kv sheet-basic">
             <div>
               <dt>Full name (in English)</dt>
@@ -189,7 +192,7 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
 
         <section className="card">
           <h2>Administration fields</h2>
-          <p className="muted small">ID No., joining date, position, supervisor and observations.</p>
+          <p className="muted small">ID No., joining date, position and supervisor.</p>
           <ActionForm action={saveAdminFields.bind(null, target.id)} className="stack">
             <div className="form-grid">
               {ADMIN_KEYS.map((k) => (
@@ -206,7 +209,7 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
       {canObject && (
         <section className="card no-print" style={{ marginTop: 20 }}>
           <h2>Objections</h2>
-          <p className="muted">Only {target.name.split(' ')[0]} and the Developer can read these. They are notified when you add one.</p>
+          <p className="muted">Only the Developer, Authorities and {target.name.split(' ')[0]} can read these. {target.name.split(' ')[0]} is notified when one is added.</p>
           <ActionForm action={addObjection.bind(null, target.id)} className="stack" resetOnSuccess>
             <div className="field">
               <label htmlFor="subject">Subject</label>

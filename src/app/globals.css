@@ -557,6 +557,15 @@ textarea.input { resize: vertical; min-height: 88px; }
 .schedule-row.has-class[class*="tone-"] .schedule-marker::after { border-color: var(--tone-accent); background: var(--tone-accent); }
 .schedule-row.has-class[class*="tone-"] .schedule-period { color: var(--tone-ink); }
 
+/* ── Objections ─────────────────────────── */
+.print-only { display: none; }
+.objection-records { margin-top: 20px; }
+.objection-records h3 { font-size: 16px; border-left: 4px solid var(--color-red); padding: 6px 12px; background: #fbeeed; margin-bottom: 10px; }
+.objection-record { border: 1px solid var(--color-border); border-left: 4px solid var(--color-red); padding: 12px 14px; margin-bottom: 10px; background: #fff; break-inside: avoid; }
+.objection-record-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 6px; }
+.objection-record-head span { color: var(--color-text-muted); font-size: 14px; }
+.objection-record p { margin: 0; white-space: pre-wrap; font-size: 15px; }
+
 /* ── Print ──────────────────────────────── */
 @media print {
   body { background: #fff; font-size: 13px; }
@@ -567,4 +576,5 @@ textarea.input { resize: vertical; min-height: 88px; }
   .page-break { break-after: page; page-break-after: always; }
   .page-head { display: none; }
   .print-area { margin: 0; }
+  .print-only { display: block; }
 }

@@ -1,5 +1,5 @@
 import { PrintButton } from '@/components/PrintButton';
-import { Avatar, PageHead, ProfileSheet } from '@/components/ui';
+import { Avatar, ObjectionRecords, PageHead, ProfileSheet, type ObjectionRecord } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { query } from '@/lib/db';
 
@@ -20,6 +20,18 @@ export default async function PrintAll() {
        from users u left join profiles p on p.user_id = u.id
       where u.active = true order by u.name`,
   );
+
+  const objectionRows = await query<ObjectionRecord & { user_id: string }>(
+    `select o.user_id, o.id, o.subject, o.body, o.created_at, a.name as author
+       from objections o left join users a on a.id = o.author_id
+      order by o.created_at`,
+  );
+  const objectionsBy = new Map<string, ObjectionRecord[]>();
+  for (const o of objectionRows) {
+    const list = objectionsBy.get(o.user_id) ?? [];
+    list.push({ id: o.id, subject: o.subject, body: o.body, created_at: o.created_at, author: o.author });
+    objectionsBy.set(o.user_id, list);
+  }
 
   return (
     <>
@@ -46,6 +58,7 @@ export default async function PrintAll() {
               </div>
             }
           />
+          <ObjectionRecords items={objectionsBy.get(u.id) ?? []} />
         </div>
       ))}
     </>

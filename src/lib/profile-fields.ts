@@ -46,12 +46,6 @@ const job = (n: number): Field[] => [
   f(`exp${n}_to`, 'To', { type: 'date' }),
 ];
 
-const obs = (n: number): Field[] => [
-  f(`obs${n}_date`, `${n}. Date`, { type: 'date', admin: true }),
-  f(`obs${n}_subject`, 'Subject', { admin: true }),
-  f(`obs${n}_desc`, 'Description', { type: 'textarea', wide: true, admin: true }),
-];
-
 export const GROUPS: Group[] = [
   {
     id: 'basic',
@@ -116,7 +110,6 @@ export const GROUPS: Group[] = [
       f('mobile', 'Mobile number'),
     ],
   },
-  { id: 'observation', title: 'Observation', fields: [...obs(1), ...obs(2), ...obs(3), ...obs(4)] },
 ];
 
 export const ALL_FIELDS: Field[] = GROUPS.flatMap((g) => g.fields);

@@ -99,6 +99,23 @@ export async function saveAdminFields(userId: string, _prev: FormState, fd: Form
   return ok('Saved.');
 }
 
+/* Anyone can correct their own name. It is saved straight away and IT / Authority are told. */
+export async function changeMyName(_prev: FormState, fd: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const name = str(fd, 'name', 120).replace(/\s+/g, ' ');
+  if (name.length < 2) return fail('Enter your full name.');
+  if (name === user.name) return fail('That is already your name.');
+  await query('update users set name = $2 where id = $1', [user.id, name]);
+  await notify(await userIdsWithRoles(['it', 'authority'], user.id), {
+    title: 'An employee changed their name',
+    body: `${user.name} is now recorded as ${name}.`,
+    url: '/employees',
+  });
+  revalidatePath('/', 'layout');
+  revalidatePath('/profile');
+  return ok('Your name has been updated.');
+}
+
 /* Profile picture (already cropped in the browser to a small square JPEG). */
 export async function savePhoto(dataUrl: string): Promise<FormState> {
   const user = await requireUser();

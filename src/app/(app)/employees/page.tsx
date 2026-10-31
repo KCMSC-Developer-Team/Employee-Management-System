@@ -104,6 +104,11 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
             Print all profiles
           </Link>
         )}
+        {developer && (
+          <Link className="btn btn-secondary" href="/employees/setup-emails">
+            Send set-up e-mails
+          </Link>
+        )}
         {manager && (
           <>
             <Link className="btn btn-secondary" href="/employees/import">

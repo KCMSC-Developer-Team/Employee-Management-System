@@ -13,13 +13,14 @@ import { revalidatePath } from 'next/cache';
 import type { FormState } from '@/lib/types';
 
 export async function login(_prev: FormState, fd: FormData): Promise<FormState> {
-  const identifier = str(fd, 'email', 200).toLowerCase();
+  const typed = str(fd, 'email', 200);           // Employee IDs are matched exactly as typed
+  const identifier = typed.toLowerCase();         // e-mail addresses are not case-sensitive
   const password = String(fd.get('password') ?? '');
   if (!identifier || !password) return fail('Enter your e-mail or ID number and password.');
 
   const user = await one<{ id: string; password_hash: string | null }>(
-    'select id, password_hash from users where (lower(email) = $1 or id_no = $1) and active = true',
-    [identifier],
+    'select id, password_hash from users where (lower(email) = $1 or id_no = $2) and active = true',
+    [identifier, typed],
   );
   const good = await verifyPassword(password, user?.password_hash);
   if (!user || !good) return fail('E-mail/ID or password is not correct.');

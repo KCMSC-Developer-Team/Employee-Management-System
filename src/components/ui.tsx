@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { FIELD_BY_KEY, GROUPS, type Field } from '@/lib/profile-fields';
-import { fmtDate } from '@/lib/utils';
+import { fmtDate, fmtDateTime } from '@/lib/utils';
 
 export function Avatar({
   id,
@@ -115,3 +115,24 @@ export function ProfileSheet({
 }
 
 export const fieldLabel = (key: string) => FIELD_BY_KEY[key]?.label ?? key;
+
+export type ObjectionRecord = { id: string; subject: string; body: string; created_at: string; author: string | null };
+
+/** Objections recorded against an employee. Shown on the profile print-out for Developer and Authority. */
+export function ObjectionRecords({ items, title = 'Objections' }: { items: ObjectionRecord[]; title?: string }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="objection-records">
+      <h3>{title}</h3>
+      {items.map((o) => (
+        <article className="objection-record" key={o.id}>
+          <div className="objection-record-head">
+            <strong>{o.subject}</strong>
+            <span>{fmtDateTime(o.created_at)}{o.author ? ` · by ${o.author}` : ''}</span>
+          </div>
+          <p>{o.body}</p>
+        </article>
+      ))}
+    </section>
+  );
+}

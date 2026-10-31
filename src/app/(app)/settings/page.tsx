@@ -1,4 +1,5 @@
 import { changePassword, emailMyResetLink, requestEmailChange } from '@/actions/auth';
+import { changeMyName } from '@/actions/profile';
 import { savePrefs } from '@/actions/misc';
 import { ActionForm, SubmitButton } from '@/components/ActionForm';
 import { PushToggle } from '@/components/PushToggle';
@@ -35,6 +36,16 @@ export default async function SettingsPage() {
         </section>
 
         <section className="card settings-section">
+          <header className="settings-section-header"><div><p className="eyebrow">Account</p><h2>Your name</h2></div></header>
+          <p className="muted">This is the name shown across the system. It is saved straight away.</p>
+          <ActionForm action={changeMyName} className="stack">
+            <div className="field">
+              <label htmlFor="my-name">Full name</label>
+              <input id="my-name" name="name" className="input" defaultValue={user.name} maxLength={120} autoComplete="name" required />
+            </div>
+            <div><SubmitButton pendingText="Saving…">Save name</SubmitButton></div>
+          </ActionForm>
+          <hr />
           <header className="settings-section-header"><div><p className="eyebrow">Account</p><h2>E-mail address</h2></div></header>
           <p className="muted">Current address: <strong>{user.email || 'Not set'}</strong></p>
           <p className="muted small">We’ll send a verification link to the new address. It will only be saved after you open that link.</p>

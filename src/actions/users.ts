@@ -5,7 +5,7 @@ import { requireRole } from '@/lib/auth';
 import { one, query } from '@/lib/db';
 import { isDeveloperEmail } from '@/lib/config';
 import { fail, go, ok, str } from '@/lib/form';
-import { sendSetPasswordLinks } from '@/lib/invite';
+import { sendSetPasswordLinks, sendSetupEmailLinks } from '@/lib/invite';
 import { hashPassword } from '@/lib/auth';
 import { assignableRoles, cleanRoles, isDeveloper } from '@/lib/roles';
 import type { FormState, Role } from '@/lib/types';
@@ -220,6 +220,32 @@ export async function sendInvite(id: string, _prev: FormState, _fd: FormData): P
   if (!target.email) return fail('This account has no e-mail address. The employee can sign in with their ID number and current password.');
   if (r.ok) return ok(`A ${kind === 'invite' ? 'set-password' : 'reset'} link was e-mailed to ${target.email}.`);
   return ok(`E-mail could not be sent (${r.error}). Give them this link yourself: ${r.links[0].link}`);
+}
+
+/* Developer only: bulk set-up e-mails to the selected employees (active, with an e-mail address). */
+export async function sendSetupEmails(_prev: FormState, fd: FormData): Promise<FormState> {
+  await requireRole('developer');
+  const ids = Array.from(new Set(fd.getAll('employeeIds').map(String)));
+  if (ids.length === 0) return fail('Select at least one employee.');
+  if (ids.length > 500) return fail('Please send to at most 500 employees at a time.');
+  if (ids.some((id) => !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))) {
+    return fail('The selected employee list is invalid.');
+  }
+
+  const targets = await query<{ id: string; email: string; name: string; id_no: string | null }>(
+    `select id, email, name, id_no from users where active = true and email is not null and id = any($1::uuid[])`,
+    [ids],
+  );
+  if (targets.length === 0) return fail('None of the selected employees is active with an e-mail address.');
+
+  const r = await sendSetupEmailLinks(targets);
+  if (!r.ok) return fail(`The e-mails could not be sent (${r.error}). Check RESEND_API_KEY and EMAIL_FROM, then try again.`);
+  const skipped = ids.length - targets.length;
+  return ok(
+    `Set-up e-mails sent to ${targets.length} employee${targets.length === 1 ? '' : 's'}.` +
+      (skipped ? ` ${skipped} selected had no active e-mail address and were skipped.` : '') +
+      ' Each person can now sign in, and anyone without an ID number has a link valid for 7 days.',
+  );
 }
 
 export async function deleteUser(id: string, _prev: FormState, _fd: FormData): Promise<FormState> {

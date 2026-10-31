@@ -66,7 +66,7 @@ export default async function ProfilePage() {
                   ))}
                 </div>
               )}
-              {managed.length > 0 && g.id !== 'observation' && (
+              {managed.length > 0 && (
                 <>
                   <h3 className="sub">Managed by administration</h3>
                   <dl className="kv">
@@ -78,16 +78,6 @@ export default async function ProfilePage() {
                     ))}
                   </dl>
                 </>
-              )}
-              {g.id === 'observation' && (
-                <dl className="kv">
-                  {managed.map((f) => (
-                    <div key={f.key} className={f.wide ? 'wide' : ''}>
-                      <dt>{f.label}</dt>
-                      <dd>{f.type === 'date' ? fmtDate(data[f.key]) : data[f.key] || '—'}</dd>
-                    </div>
-                  ))}
-                </dl>
               )}
             </section>
           );
